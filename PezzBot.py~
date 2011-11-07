@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+from ants import Ants
+import logging
+
+def initLogging():
+  #logLevel = logging.DEBUG
+  logLevel = logging.INFO
+  #logLevel = logging.WARNING
+  logger = getLogger()
+  logger.setLevel(logLevel)
+
+  ch = logging.FileHandler("bot.txt")
+  ch.setLevel(logLevel)
+
+  formatter = logging.Formatter("%(asctime)s-%(funcName)s: %(message)s")
+  ch.setFormatter(formatter)
+  getLogger().addHandler(ch)
+
+def getLogger():
+  return logging.getLogger("ConsoleLog")
+
+class MyBot:
+    def __init__(self):
+        self.log = getLogger()
+    
+    # do_setup is run once at the start of the game
+    # after the bot has received the game settings
+    # the ants class is created and setup by the Ants.run method
+    def do_setup(self, world):
+        self.log.info("Setup")
+    
+    # do turn is run once per turn
+    # the ants class has the game state and is updated by the Ants.run method
+    # it also has several helper methods to use
+    def do_turn(self, ants):
+        self.log.info("----------")
+        self.log.info("Start turn")
+
+if __name__ == '__main__':
+    initLogging()
+    try:
+        # if run is passed a class with a do_turn method, it will do the work
+        # this is not needed, in which case you will need to write your own
+        # parsing function and your own game state class
+        Ants.run(MyBot())
+    except KeyboardInterrupt:
+        print('ctrl-c, leaving ...')
