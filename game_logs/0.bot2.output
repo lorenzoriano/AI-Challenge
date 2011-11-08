@@ -1,6 +1,7 @@
 # turn 1
 o 32 65 n
 # turn 2
+<<<<<<< HEAD
 o 31 65 w
 # turn 3
 o 31 64 n
@@ -10,6 +11,17 @@ o 30 64 e
 o 30 65 n
 # turn 6
 o 29 65 e
+=======
+o 31 65 e
+# turn 3
+o 31 66 e
+# turn 4
+o 31 67 e
+# turn 5
+o 31 68 n
+# turn 6
+o 30 68 n
+>>>>>>> 6ac68e8bccf3aeaa85de3873c7d39eb20ccb5812
 # turn 7
 o 29 66 w
 # turn 8
@@ -490,6 +502,7 @@ o 30 66 e
 o 33 69 w
 o 32 69 e
 # turn 98
+<<<<<<< HEAD
 o 30 64 e
 o 30 67 n
 o 31 69 n
@@ -841,3 +854,5 @@ o 29 65 e
 o 29 66 w
 # turn 194
 o 29 65 s
+=======
+>>>>>>> 6ac68e8bccf3aeaa85de3873c7d39eb20ccb5812
