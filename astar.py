@@ -21,7 +21,6 @@
 
 from heapq import heappush, heappop
 from sys import maxint
-import logging
 
 # Represent each node as a list, ordering the elements so that a heap of nodes
 # is ordered by f = g + h, with h as a first, greedy tie-breaker and num as a
@@ -30,7 +29,6 @@ import logging
 
 F, H, NUM, G, POS, OPEN, VALID, PARENT = xrange(8)
 
-log = logging.getLogger("AntsLog")
 
 def pathfind(start_pos, goal_pos, bot, world):
     """
@@ -49,7 +47,6 @@ def pathfind(start_pos, goal_pos, bot, world):
         for direction in ('s','e','w','n'):
             new_loc = world.destination(loc, direction)
             if world.passable(new_loc):
-                #log.info("Yielding %s, from %s", new_loc, loc) 
                 yield new_loc
     
     def cost(a, b):
@@ -60,7 +57,6 @@ def pathfind(start_pos, goal_pos, bot, world):
         it returns 1, unless b has an ant on it, in which case it returns
         a big value.
         """
-        #log.info("Calling with %s -- %s", a, b)
         if not world.unoccupied(b):
             return 1
         else:

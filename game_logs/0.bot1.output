@@ -1,0 +1,1791 @@
+# turn 1
+o 9 6 s
+# turn 2
+o 10 6 e
+# turn 3
+o 10 7 s
+# turn 4
+o 11 7 w
+# turn 5
+o 11 6 s
+# turn 6
+o 12 6 w
+# turn 7
+o 12 5 w
+# turn 8
+o 12 4 w
+# turn 9
+o 12 3 n
+# turn 10
+o 11 3 w
+# turn 11
+o 11 2 w
+# turn 12
+o 11 1 s
+# turn 13
+o 12 1 n
+# turn 14
+o 11 1 w
+# turn 15
+o 11 0 w
+# turn 16
+o 11 89 w
+# turn 17
+o 11 88 w
+# turn 18
+o 11 87 w
+# turn 19
+o 11 86 s
+# turn 20
+o 12 86 w
+# turn 21
+o 12 85 s
+# turn 22
+o 13 85 s
+# turn 23
+o 14 85 e
+# turn 24
+o 14 86 e
+# turn 25
+o 14 87 e
+# turn 26
+o 14 88 e
+# turn 27
+o 14 89 s
+# turn 28
+o 15 89 e
+# turn 29
+o 15 0 e
+# turn 30
+o 15 1 e
+# turn 31
+o 15 2 e
+# turn 32
+o 15 3 e
+# turn 33
+o 15 4 n
+# turn 34
+o 14 4 s
+# turn 35
+o 15 4 e
+# turn 36
+o 15 5 e
+# turn 37
+o 15 6 e
+# turn 38
+o 15 7 n
+# turn 39
+o 14 7 e
+# turn 40
+o 14 8 s
+# turn 41
+o 15 8 e
+# turn 42
+o 15 9 e
+# turn 43
+o 15 10 n
+# turn 44
+o 14 10 n
+# turn 45
+o 13 10 n
+# turn 46
+o 12 10 n
+# turn 47
+o 11 10 w
+# turn 48
+o 11 9 n
+# turn 49
+o 10 9 n
+# turn 50
+o 9 9 e
+# turn 51
+o 9 10 n
+# turn 52
+o 8 10 n
+# turn 53
+o 9 6 s
+o 7 10 w
+# turn 54
+o 10 6 e
+o 7 9 e
+# turn 55
+o 10 7 s
+o 9 6 w
+o 7 10 n
+# turn 56
+o 9 5 w
+o 6 10 n
+o 11 7 w
+# turn 57
+o 5 10 w
+o 11 6 s
+o 9 4 w
+# turn 58
+o 5 9 w
+o 9 3 w
+o 12 6 w
+# turn 59
+o 9 2 w
+o 12 5 w
+o 5 8 w
+# turn 60
+o 5 7 s
+o 9 1 w
+o 12 4 w
+# turn 61
+o 9 0 w
+o 6 7 w
+o 12 3 n
+# turn 62
+o 11 3 w
+o 9 89 w
+o 6 6 w
+# turn 63
+o 9 88 w
+o 9 6 s
+o 11 2 w
+o 6 5 n
+# turn 64
+o 11 1 s
+o 10 6 e
+o 5 5 w
+o 9 87 w
+# turn 65
+o 10 7 s
+o 9 86 w
+o 5 4 w
+o 9 6 w
+o 12 1 n
+# turn 66
+o 11 7 w
+o 9 85 w
+o 11 1 w
+o 9 5 w
+o 9 6 s
+o 5 3 s
+# turn 67
+o 11 0 w
+o 9 84 w
+o 10 6 e
+o 6 3 n
+o 9 4 w
+o 11 6 s
+# turn 68
+o 9 83 w
+o 10 7 s
+o 9 3 w
+o 12 6 w
+o 11 89 w
+o 5 3 w
+# turn 69
+o 11 7 w
+o 9 2 w
+o 12 5 w
+o 11 88 w
+o 9 82 n
+o 5 2 w
+# turn 70
+o 9 1 w
+o 11 87 w
+o 12 4 w
+o 8 82 n
+o 5 1 w
+o 11 6 s
+# turn 71
+o 9 0 w
+o 12 6 w
+o 7 82 w
+o 11 86 s
+o 5 0 s
+o 12 3 n
+# turn 72
+o 12 5 w
+o 12 86 w
+o 11 3 w
+o 6 0 s
+o 7 81 w
+o 9 6 s
+o 9 89 w
+# turn 73
+o 12 85 s
+o 7 0 s
+o 11 2 w
+o 10 6 e
+o 7 80 w
+o 12 4 w
+o 9 88 w
+# turn 74
+o 7 79 s
+o 10 7 s
+o 8 0 s
+o 9 87 w
+o 11 1 s
+o 13 85 s
+o 12 3 n
+# turn 75
+o 11 7 w
+o 9 0 e
+o 12 1 n
+o 9 86 w
+o 11 3 w
+o 14 85 e
+o 8 79 s
+# turn 76
+o 9 1 e
+o 9 79 s
+o 9 85 w
+o 11 1 w
+o 14 86 e
+o 11 6 s
+# turn 77
+o 11 0 w
+o 9 84 w
+o 9 2 n
+o 12 6 w
+o 10 79 e
+o 14 87 e
+o 11 2 n
+# turn 78
+o 12 5 w
+o 11 89 w
+o 8 2 e
+o 10 80 e
+o 14 88 e
+o 9 83 w
+o 10 2 n
+# turn 79
+o 8 3 e
+o 10 81 e
+o 9 2 n
+o 14 89 s
+o 11 88 w
+o 12 4 w
+o 9 82 n
+# turn 80
+o 8 2 e
+o 15 89 e
+o 10 82 n
+o 11 87 w
+o 8 82 n
+o 8 4 e
+o 12 3 n
+# turn 81
+o 8 3 e
+o 15 0 e
+o 11 3 w
+o 7 82 w
+o 11 86 s
+o 9 82 n
+o 8 5 s
+# turn 82
+o 11 2 w
+o 15 1 e
+o 8 82 n
+o 7 81 w
+o 9 5 e
+o 12 86 w
+o 8 4 e
+# turn 83
+o 12 85 s
+o 15 2 e
+o 8 5 s
+o 11 1 s
+o 7 82 w
+o 7 80 w
+o 9 6 s
+# turn 84
+o 7 79 s
+o 15 3 e
+o 10 6 e
+o 12 1 n
+o 7 81 w
+o 9 5 e
+o 13 85 s
+# turn 85
+o 10 7 s
+o 11 1 w
+o 7 80 w
+o 14 85 e
+o 15 4 n
+o 9 6 s
+o 8 79 s
+# turn 86
+o 11 7 w
+o 7 79 s
+o 9 79 s
+o 14 4 s
+o 10 6 e
+o 11 0 w
+o 14 86 e
+# turn 87
+o 10 7 s
+o 10 79 e
+o 8 79 s
+o 15 4 e
+o 11 89 w
+o 14 87 e
+o 11 6 s
+# turn 88
+o 11 7 w
+o 9 79 s
+o 10 80 e
+o 12 6 w
+o 14 88 e
+o 11 88 w
+o 15 5 e
+# turn 89
+o 12 5 w
+o 10 81 e
+o 14 89 s
+o 10 79 e
+o 11 87 w
+o 15 6 e
+o 9 6 s
+o 11 6 s
+# turn 90
+o 15 89 e
+o 10 80 e
+o 10 6 e
+o 12 6 w
+o 11 86 s
+o 10 82 n
+o 12 4 w
+o 15 7 n
+# turn 91
+o 10 81 e
+o 10 7 s
+o 15 0 e
+o 14 7 e
+o 12 5 w
+o 9 82 n
+o 12 86 w
+o 12 3 n
+# turn 92
+o 12 85 s
+o 11 7 w
+o 11 3 w
+o 10 82 n
+o 12 4 w
+o 8 82 n
+o 15 1 e
+o 14 8 s
+# turn 93
+o 15 2 e
+o 11 2 w
+o 7 82 w
+o 15 8 e
+o 11 6 s
+o 9 82 n
+o 13 85 s
+o 12 3 n
+# turn 94
+o 15 3 e
+o 15 9 e
+o 11 3 w
+o 12 6 w
+o 11 1 s
+o 8 82 n
+o 14 85 e
+o 7 81 w
+# turn 95
+o 12 1 n
+o 7 82 w
+o 12 5 w
+o 7 80 w
+o 15 10 n
+o 15 4 n
+o 14 86 e
+# turn 96
+o 14 10 n
+o 7 79 s
+o 14 4 s
+o 11 2 n
+o 14 87 e
+o 12 4 w
+o 11 1 w
+o 7 81 w
+# turn 97
+o 14 88 e
+o 11 0 w
+o 7 80 w
+o 12 3 n
+o 15 4 e
+o 13 10 n
+o 8 79 s
+o 10 2 n
+# turn 98
+o 15 5 e
+o 7 79 s
+o 9 79 s
+o 9 2 n
+o 14 89 s
+o 11 3 w
+o 12 10 n
+o 11 89 w
+# turn 99
+o 11 10 w
+o 8 2 e
+o 15 89 e
+o 11 2 w
+o 10 79 e
+o 15 6 e
+o 11 88 w
+o 8 79 s
+# turn 100
+o 8 3 e
+o 9 79 s
+o 10 80 e
+o 11 9 n
+o 15 0 e
+o 11 87 w
+o 11 1 s
+o 15 7 n
+# turn 101
+o 12 1 n
+o 10 81 e
+o 14 7 e
+o 11 86 s
+o 15 1 e
+o 10 79 e
+o 8 4 e
+o 10 9 n
+# turn 102
+o 15 2 e
+o 10 80 e
+o 9 9 e
+o 10 82 n
+o 14 8 s
+o 11 1 w
+o 8 5 s
+o 12 86 w
+# turn 103
+o 12 85 s
+o 11 0 w
+o 10 81 e
+o 15 3 e
+o 9 10 n
+o 15 8 e
+o 9 82 n
+o 9 5 e
+# turn 104
+o 8 10 n
+o 10 82 n
+o 8 82 n
+o 15 9 e
+o 15 4 n
+o 11 89 w
+o 9 6 s
+o 13 85 s
+# turn 105
+o 14 85 e
+o 14 4 s
+o 10 6 e
+o 7 82 w
+o 11 88 w
+o 15 10 n
+o 7 10 w
+o 9 82 n
+# turn 106
+o 14 10 n
+o 10 7 s
+o 11 87 w
+o 8 82 n
+o 7 81 w
+o 15 4 e
+o 14 86 e
+o 7 9 e
+# turn 107
+o 11 7 w
+o 14 87 e
+o 7 82 w
+o 7 80 w
+o 11 86 s
+o 7 10 n
+o 15 5 e
+o 13 10 n
+# turn 108
+o 7 79 s
+o 6 10 n
+o 14 88 e
+o 15 6 e
+o 11 6 s
+o 7 81 w
+o 12 10 n
+o 12 86 w
+# turn 109
+o 12 85 s
+o 11 10 w
+o 5 10 w
+o 14 89 s
+o 12 6 w
+o 7 80 w
+o 15 7 n
+o 8 79 s
+# turn 110
+o 5 9 w
+o 7 79 s
+o 9 79 s
+o 11 9 n
+o 14 7 e
+o 12 5 w
+o 15 89 e
+o 13 85 s
+# turn 111
+o 15 0 e
+o 10 79 e
+o 12 4 w
+o 8 79 s
+o 14 85 e
+o 5 8 w
+o 14 8 s
+o 10 9 n
+# turn 112
+o 9 79 s
+o 10 80 e
+o 5 7 s
+o 9 9 e
+o 15 8 e
+o 12 3 n
+o 14 86 e
+# turn 113
+o 10 79 e
+o 6 7 w
+o 10 81 e
+o 14 87 e
+o 11 3 w
+o 9 10 n
+o 15 9 e
+o 15 1 s
+o 9 6 s
+# turn 114
+o 14 88 e
+o 6 6 w
+o 10 80 e
+o 10 6 e
+o 8 10 n
+o 15 10 n
+o 16 1 s
+o 10 82 n
+o 11 2 w
+# turn 115
+o 14 10 n
+o 10 81 e
+o 10 7 s
+o 14 89 s
+o 17 1 s
+o 11 1 s
+o 7 10 w
+o 9 82 n
+o 9 6 w
+o 6 5 n
+# turn 116
+o 11 7 w
+o 5 5 w
+o 15 89 e
+o 12 1 n
+o 10 82 n
+o 8 82 n
+o 9 5 w
+o 13 10 n
+o 18 1 s
+o 7 9 e
+# turn 117
+o 5 4 w
+o 7 10 n
+o 15 0 e
+o 11 1 w
+o 7 82 w
+o 9 4 w
+o 9 82 n
+o 12 10 n
+o 19 1 s
+o 11 6 s
+# turn 118
+o 11 0 w
+o 11 10 w
+o 6 10 n
+o 9 3 w
+o 20 1 s
+o 12 6 w
+o 8 82 n
+o 7 81 w
+o 15 1 e
+o 5 3 s
+# turn 119
+o 12 5 w
+o 5 10 w
+o 15 2 e
+o 9 2 w
+o 21 1 s
+o 11 9 n
+o 7 82 w
+o 6 3 n
+o 7 80 w
+o 11 89 w
+# turn 120
+o 5 9 w
+o 9 1 w
+o 7 81 w
+o 10 9 n
+o 15 3 e
+o 11 88 w
+o 5 3 w
+o 7 79 s
+o 12 4 w
+o 22 1 s
+# turn 121
+o 5 8 w
+o 9 0 w
+o 15 4 n
+o 12 3 n
+o 11 87 w
+o 7 80 w
+o 23 1 s
+o 9 9 e
+o 8 79 s
+o 5 2 w
+# turn 122
+o 14 4 s
+o 5 1 w
+o 24 1 s
+o 9 10 n
+o 9 89 w
+o 7 79 s
+o 9 79 s
+o 5 7 s
+o 11 3 w
+o 11 86 s
+# turn 123
+o 11 2 w
+o 25 1 s
+o 12 86 w
+o 6 7 w
+o 8 10 n
+o 5 0 s
+o 15 4 e
+o 10 79 e
+o 8 79 s
+o 9 88 w
+# turn 124
+o 12 85 s
+o 6 6 w
+o 15 5 e
+o 10 80 e
+o 9 87 w
+o 11 1 s
+o 7 10 w
+o 6 0 s
+o 26 1 w
+o 9 79 s
+# turn 125
+o 12 1 n
+o 10 81 e
+o 26 0 w
+o 9 86 w
+o 10 79 e
+o 9 6 s
+o 13 85 s
+o 6 5 n
+o 7 9 e
+o 7 0 s
+o 15 6 e
+# turn 126
+o 10 6 e
+o 5 5 w
+o 10 80 e
+o 11 1 w
+o 7 10 n
+o 14 85 e
+o 15 7 n
+o 8 0 s
+o 26 89 s
+o 9 85 w
+o 10 82 n
+# turn 127
+o 9 84 w
+o 9 0 e
+o 10 7 s
+o 6 10 n
+o 5 4 w
+o 10 81 e
+o 11 0 w
+o 9 82 n
+o 14 86 e
+o 27 89 w
+o 14 7 e
+# turn 128
+o 11 7 w
+o 11 89 w
+o 5 10 w
+o 9 1 e
+o 27 88 w
+o 10 82 n
+o 8 82 n
+o 14 87 e
+o 14 8 s
+o 5 3 s
+# turn 129
+o 5 9 w
+o 27 87 w
+o 9 2 n
+o 14 88 e
+o 7 82 w
+o 6 3 n
+o 11 88 w
+o 15 8 e
+o 9 82 n
+o 9 83 s
+o 11 6 s
+# turn 130
+o 27 86 w
+o 8 2 e
+o 14 89 s
+o 15 9 e
+o 10 83 s
+o 12 6 w
+o 11 87 w
+o 8 82 n
+o 7 81 w
+o 5 8 w
+o 5 3 w
+# turn 131
+o 15 89 e
+o 7 82 w
+o 12 5 w
+o 27 85 s
+o 15 10 n
+o 7 80 w
+o 11 83 s
+o 8 3 e
+o 5 7 s
+o 11 86 s
+o 5 2 w
+# turn 132
+o 5 1 w
+o 12 86 w
+o 6 7 w
+o 15 0 e
+o 12 83 s
+o 28 85 s
+o 7 81 w
+o 14 10 n
+o 7 79 s
+o 12 4 w
+o 8 4 e
+# turn 133
+o 12 85 s
+o 6 6 w
+o 29 85 e
+o 15 1 e
+o 13 83 s
+o 8 5 s
+o 5 0 s
+o 12 3 n
+o 7 80 w
+o 13 10 n
+o 8 79 s
+# turn 134
+o 14 83 s
+o 12 10 n
+o 6 0 s
+o 13 85 s
+o 6 5 n
+o 7 79 s
+o 15 2 e
+o 9 79 s
+o 11 3 w
+o 29 86 s
+o 9 5 e
+# turn 135
+o 11 2 w
+o 11 10 w
+o 5 5 w
+o 14 85 e
+o 15 3 e
+o 30 86 e
+o 10 79 e
+o 15 83 s
+o 9 6 s
+o 7 0 s
+o 8 79 s
+# turn 136
+o 10 6 e
+o 10 80 e
+o 11 1 s
+o 15 4 n
+o 5 4 w
+o 8 0 s
+o 14 86 e
+o 9 79 s
+o 30 87 e
+o 11 9 n
+# turn 137
+o 12 1 n
+o 14 4 s
+o 9 0 e
+o 10 7 s
+o 10 9 n
+o 10 81 e
+o 10 79 e
+o 5 3 s
+o 14 87 e
+o 30 88 e
+# turn 138
+o 9 1 e
+o 14 88 e
+o 30 89 e
+o 10 80 e
+o 6 3 n
+o 11 1 w
+o 15 4 e
+o 11 7 w
+o 9 9 e
+o 10 82 n
+# turn 139
+o 15 5 e
+o 30 0 e
+o 14 89 s
+o 10 81 e
+o 11 0 w
+o 9 82 n
+o 5 3 w
+o 9 10 n
+o 9 2 n
+o 11 6 s
+# turn 140
+o 30 1 n
+o 12 6 w
+o 8 2 e
+o 15 89 e
+o 8 10 n
+o 10 82 n
+o 15 6 e
+o 8 82 n
+o 11 89 w
+o 5 2 w
+# turn 141
+o 7 82 w
+o 12 5 w
+o 9 82 n
+o 5 1 w
+o 15 0 e
+o 7 10 w
+o 15 7 n
+o 11 88 w
+o 8 3 e
+o 29 1 s
+# turn 142
+o 15 1 e
+o 8 82 n
+o 5 0 s
+o 7 81 w
+o 30 1 e
+o 11 87 w
+o 7 9 e
+o 14 7 e
+o 12 4 w
+o 8 4 e
+# turn 143
+o 7 82 w
+o 11 86 s
+o 8 5 s
+o 7 10 n
+o 12 3 n
+o 6 0 s
+o 7 80 w
+o 15 2 e
+o 30 2 e
+o 14 8 s
+# turn 144
+o 15 8 e
+o 12 86 w
+o 6 10 n
+o 7 81 w
+o 15 3 e
+o 7 0 s
+o 7 79 s
+o 11 3 w
+o 9 5 e
+# turn 145
+o 12 85 s
+o 11 2 w
+o 8 0 s
+o 15 4 n
+o 7 80 w
+o 9 6 s
+o 5 10 w
+o 8 79 s
+o 15 9 e
+# turn 146
+o 5 9 w
+o 14 4 s
+o 10 6 e
+o 9 0 e
+o 11 1 s
+o 15 10 n
+o 13 85 s
+o 7 79 s
+o 9 79 s
+# turn 147
+o 12 1 n
+o 9 1 e
+o 5 8 w
+o 10 7 s
+o 14 85 e
+o 15 4 e
+o 14 10 n
+o 10 79 e
+o 8 79 s
+# turn 148
+o 15 5 e
+o 10 80 e
+o 11 1 w
+o 11 7 w
+o 13 10 n
+o 14 86 e
+o 9 79 s
+o 9 2 n
+o 5 7 s
+# turn 149
+o 6 7 w
+o 12 10 n
+o 8 2 e
+o 10 81 e
+o 10 79 e
+o 11 0 w
+o 15 6 e
+o 14 87 e
+o 11 6 s
+# turn 150
+o 6 6 w
+o 14 88 e
+o 11 10 w
+o 10 80 e
+o 12 6 w
+o 11 89 w
+o 15 7 n
+o 8 3 e
+o 10 82 n
+# turn 151
+o 12 5 w
+o 9 82 n
+o 14 89 s
+o 10 81 e
+o 11 9 n
+o 11 88 w
+o 6 5 n
+o 14 7 e
+o 8 4 e
+# turn 152
+o 5 5 w
+o 10 82 n
+o 11 87 w
+o 8 82 n
+o 12 4 w
+o 15 89 e
+o 8 5 s
+o 14 8 s
+o 10 9 n
+# turn 153
+o 5 4 w
+o 12 3 n
+o 15 0 e
+o 7 82 w
+o 9 9 e
+o 11 86 s
+o 9 82 n
+o 9 5 e
+o 15 8 e
+# turn 154
+o 9 10 n
+o 11 3 w
+o 15 1 e
+o 8 82 n
+o 7 81 w
+o 15 9 e
+o 9 6 s
+o 12 86 w
+o 5 3 s
+# turn 155
+o 12 85 s
+o 15 2 e
+o 11 2 w
+o 10 6 e
+o 8 10 n
+o 7 82 w
+o 6 3 n
+o 7 80 w
+o 15 10 n
+# turn 156
+o 14 10 n
+o 10 7 s
+o 11 1 s
+o 7 10 w
+o 7 81 w
+o 15 3 e
+o 13 85 s
+o 5 3 w
+o 7 79 s
+# turn 157
+o 12 1 n
+o 14 85 e
+o 15 4 n
+o 7 80 w
+o 13 10 n
+o 7 9 e
+o 11 7 w
+o 8 79 s
+o 5 2 w
+# turn 158
+o 14 4 s
+o 5 1 w
+o 11 1 w
+o 7 10 n
+o 12 10 n
+o 14 86 e
+o 7 79 s
+o 9 79 s
+o 11 6 s
+# turn 159
+o 11 10 w
+o 6 10 n
+o 12 6 w
+o 5 0 s
+o 15 4 e
+o 11 0 w
+o 10 79 e
+o 14 87 e
+o 8 79 s
+# turn 160
+o 14 88 e
+o 12 5 w
+o 15 5 e
+o 10 80 e
+o 11 89 w
+o 11 9 n
+o 6 0 s
+o 5 10 w
+o 9 79 s
+# turn 161
+o 5 9 w
+o 14 89 s
+o 10 9 n
+o 10 81 e
+o 10 79 e
+o 11 88 w
+o 7 0 s
+o 15 6 e
+o 12 4 w
+# turn 162
+o 15 89 e
+o 8 0 s
+o 5 8 w
+o 10 80 e
+o 12 3 n
+o 11 87 w
+o 15 7 n
+o 9 9 e
+o 10 82 n
+# turn 163
+o 9 0 e
+o 10 81 e
+o 15 0 e
+o 5 7 s
+o 14 7 e
+o 11 86 s
+o 11 3 w
+o 9 10 n
+o 9 82 n
+# turn 164
+o 9 1 e
+o 11 2 w
+o 8 10 n
+o 10 82 n
+o 14 8 s
+o 8 82 n
+o 6 7 w
+o 15 1 e
+o 12 86 w
+# turn 165
+o 12 85 s
+o 15 2 e
+o 6 6 w
+o 9 2 n
+o 7 82 w
+o 11 1 s
+o 15 8 e
+o 7 10 w
+o 9 82 n
+# turn 166
+o 12 1 n
+o 8 82 n
+o 7 81 w
+o 8 2 e
+o 15 3 e
+o 13 85 s
+o 6 5 n
+o 7 9 e
+o 15 9 e
+# turn 167
+o 14 85 e
+o 7 82 w
+o 5 5 w
+o 11 1 w
+o 7 10 n
+o 15 4 n
+o 15 10 n
+o 7 80 w
+o 8 3 e
+# turn 168
+o 14 4 s
+o 5 4 w
+o 6 10 n
+o 7 81 w
+o 14 10 n
+o 11 0 w
+o 14 86 e
+o 7 79 s
+o 8 4 e
+# turn 169
+o 8 5 s
+o 15 4 e
+o 11 89 w
+o 7 80 w
+o 13 10 n
+o 5 3 s
+o 5 10 w
+o 14 87 e
+o 8 79 s
+# turn 170
+o 5 9 w
+o 14 88 e
+o 15 5 e
+o 6 3 n
+o 12 10 n
+o 11 88 w
+o 7 79 s
+o 9 79 s
+o 9 5 e
+# turn 171
+o 5 8 w
+o 11 10 w
+o 14 89 s
+o 10 79 e
+o 11 87 w
+o 9 6 s
+o 5 3 w
+o 15 6 e
+o 8 79 s
+# turn 172
+o 15 89 e
+o 10 6 e
+o 10 80 e
+o 15 7 n
+o 9 79 s
+o 5 7 s
+o 11 86 s
+o 11 9 n
+o 5 2 w
+# turn 173
+o 5 1 w
+o 12 86 w
+o 6 7 w
+o 10 7 s
+o 15 0 e
+o 10 9 n
+o 10 81 e
+o 10 79 e
+o 14 7 e
+# turn 174
+o 12 85 s
+o 6 6 w
+o 15 1 e
+o 10 80 e
+o 5 0 s
+o 11 7 w
+o 9 9 e
+o 10 82 n
+o 14 8 s
+# turn 175
+o 15 8 e
+o 10 81 e
+o 6 0 s
+o 9 10 n
+o 9 82 n
+o 13 85 s
+o 6 5 n
+o 15 2 e
+o 11 6 s
+# turn 176
+o 8 10 n
+o 5 5 w
+o 12 6 w
+o 8 82 n
+o 14 85 e
+o 15 3 e
+o 7 0 s
+o 10 82 n
+o 15 9 e
+# turn 177
+o 8 0 s
+o 12 5 w
+o 7 10 w
+o 15 4 n
+o 5 4 w
+o 15 10 n
+o 7 82 w
+o 9 82 n
+o 14 86 e
+# turn 178
+o 14 4 s
+o 9 0 e
+o 8 82 n
+o 7 9 e
+o 14 10 n
+o 7 81 w
+o 5 3 s
+o 12 4 w
+o 14 87 e
+# turn 179
+o 9 1 e
+o 14 88 e
+o 7 82 w
+o 6 3 n
+o 7 10 n
+o 15 4 e
+o 12 3 n
+o 7 80 w
+o 13 10 n
+# turn 180
+o 11 3 w
+o 15 5 e
+o 14 89 s
+o 6 10 n
+o 7 81 w
+o 12 10 n
+o 5 3 w
+o 7 79 s
+o 9 2 n
+# turn 181
+o 15 89 e
+o 11 2 w
+o 11 10 w
+o 8 2 e
+o 7 80 w
+o 5 10 w
+o 15 6 e
+o 8 79 s
+o 5 2 w
+# turn 182
+o 5 9 w
+o 5 1 w
+o 15 0 e
+o 11 1 s
+o 11 9 n
+o 8 3 e
+o 15 7 n
+o 7 79 s
+o 9 79 s
+# turn 183
+o 12 1 n
+o 15 1 e
+o 5 8 w
+o 5 0 s
+o 10 9 n
+o 14 7 e
+o 8 79 s
+o 8 4 e
+# turn 184
+o 8 5 s
+o 11 1 w
+o 6 0 s
+o 9 9 e
+o 15 2 e
+o 9 79 s
+o 5 7 s
+o 14 8 s
+# turn 185
+o 10 79 e
+o 6 7 w
+o 15 3 e
+o 9 10 n
+o 11 0 w
+o 15 8 e
+o 7 0 s
+o 9 5 e
+# turn 186
+o 6 6 w
+o 10 80 e
+o 8 10 n
+o 15 4 n
+o 11 89 w
+o 8 0 s
+o 9 6 s
+o 15 9 e
+# turn 187
+o 14 4 s
+o 9 0 e
+o 7 10 w
+o 10 6 e
+o 10 81 e
+o 15 10 n
+o 11 88 w
+o 6 5 n
+# turn 188
+o 14 10 n
+o 9 1 e
+o 10 7 s
+o 10 82 n
+o 15 4 e
+o 7 9 e
+o 5 5 w
+# turn 189
+o 11 7 w
+o 5 4 w
+o 13 10 n
+o 9 2 n
+o 7 10 n
+o 9 82 n
+o 15 5 e
+# turn 190
+o 8 2 e
+o 6 10 n
+o 15 6 e
+o 8 82 n
+o 12 10 n
+o 11 6 s
+o 5 3 s
+# turn 191
+o 8 3 e
+o 5 10 w
+o 7 82 w
+o 12 6 w
+o 6 3 n
+o 11 10 w
+o 15 7 n
+# turn 192
+o 5 9 w
+o 12 5 w
+o 11 9 n
+o 14 7 e
+o 7 81 w
+o 5 3 w
+o 8 4 e
+# turn 193
+o 5 2 w
+o 10 9 n
+o 7 80 w
+o 12 4 w
+o 8 5 s
+o 14 8 s
+o 5 8 w
+# turn 194
+o 15 8 e
+o 5 1 w
+o 12 3 n
+o 7 79 s
+o 5 7 s
+o 9 9 e
+o 9 5 e
+# turn 195
+o 6 7 w
+o 5 0 s
+o 9 10 n
+o 9 6 s
+o 11 3 w
+o 15 9 e
+o 8 79 s
+# turn 196
+o 6 6 w
+o 11 2 w
+o 10 6 e
+o 8 10 n
+o 15 10 n
+o 6 0 s
+# turn 197
+o 14 10 n
+o 7 0 s
+o 10 7 s
+o 11 1 s
+o 7 10 w
+o 6 5 n
+# turn 198
+o 11 7 w
+o 12 1 n
+o 5 5 w
+o 8 0 s
+o 13 10 n
+o 7 9 e
+# turn 199
+o 5 4 w
+o 9 0 e
+o 11 1 w
+o 7 10 n
+o 12 10 n
+o 11 6 s
+# turn 200
+o 11 10 w
+o 9 1 e
+o 6 10 n
+o 12 6 w
+o 11 0 w
+o 5 3 s
+# turn 201
+o 12 5 w
+o 5 10 w
+o 9 2 n
+o 11 9 n
+o 6 3 n
+o 11 89 w
+# turn 202
+o 5 9 w
+o 8 2 e
+o 12 4 w
+o 11 88 w
+o 10 9 n
+o 5 3 w
+# turn 203
+o 8 3 e
+o 9 9 e
+o 11 87 w
+o 12 3 n
+o 5 2 w
+o 5 8 w
+# turn 204
+o 5 7 s
+o 11 3 w
+o 9 10 n
+o 11 86 s
+o 5 1 w
+o 8 4 e
+# turn 205
+o 6 7 w
+o 11 2 w
+o 8 10 n
+o 5 0 s
+o 8 5 s
+o 12 86 w
+# turn 206
+o 12 85 s
+o 6 6 w
+o 6 0 s
+o 11 1 s
+o 7 10 w
+o 9 5 e
+# turn 207
+o 7 0 s
+o 12 1 n
+o 9 6 s
+o 13 85 s
+o 6 5 n
+o 7 9 e
+# turn 208
+o 10 6 e
+o 5 5 w
+o 8 0 s
+o 11 1 w
+o 7 10 n
+o 14 85 e
+# turn 209
+o 5 4 w
+o 10 7 s
+o 6 10 n
+o 9 0 e
+o 11 0 w
+o 14 86 e
+# turn 210
+o 11 7 w
+o 5 10 w
+o 9 1 e
+o 11 89 w
+o 14 87 e
+o 5 3 s
+# turn 211
+o 5 9 w
+o 9 2 n
+o 14 88 e
+o 6 3 n
+o 11 88 w
+o 11 6 s
+# turn 212
+o 8 2 e
+o 14 89 s
+o 12 6 w
+o 11 87 w
+o 5 8 w
+o 5 3 w
+# turn 213
+o 8 3 e
+o 15 89 e
+o 5 7 s
+o 11 86 s
+o 12 5 w
+o 5 2 w
+# turn 214
+o 6 7 w
+o 12 86 w
+o 12 4 w
+o 5 1 w
+o 8 4 e
+# turn 215
+o 12 85 s
+o 6 6 w
+o 5 0 s
+o 8 5 s
+o 12 3 n
+# turn 216
+o 6 0 s
+o 11 3 w
+o 9 5 e
+o 13 85 s
+o 6 5 n
+# turn 217
+o 7 0 s
+o 5 5 w
+o 11 2 w
+o 14 85 e
+o 9 6 s
+# turn 218
+o 5 4 w
+o 10 6 e
+o 8 0 s
+o 11 1 s
+o 14 86 e
+# turn 219
+o 9 0 e
+o 12 1 n
+o 10 7 s
+o 14 87 e
+o 5 3 s
+# turn 220
+o 11 7 w
+o 9 1 e
+o 14 88 e
+o 6 3 n
+o 11 1 w
+# turn 221
+o 9 2 n
+o 14 89 s
+o 11 0 w
+o 11 6 s
+o 5 3 w
+# turn 222
+o 8 2 e
+o 15 89 e
+o 12 6 w
+o 11 89 w
+o 5 2 w
+# turn 223
+o 8 3 e
+o 15 0 e
+o 12 5 w
+o 11 88 w
+o 5 1 w
+# turn 224
+o 15 1 e
+o 11 87 w
+o 12 4 w
+o 5 0 s
+o 8 4 e
+# turn 225
+o 11 86 s
+o 15 2 e
+o 6 0 s
+o 8 5 s
+o 12 3 n
+# turn 226
+o 7 0 s
+o 15 3 e
+o 11 3 w
+o 9 5 e
+o 12 86 w
+# turn 227
+o 12 85 s
+o 11 2 w
+o 8 0 s
+o 15 4 n
+o 9 6 s
+# turn 228
+o 9 0 e
+o 14 4 s
+o 10 6 e
+o 11 1 s
+o 13 85 s
+# turn 229
+o 12 1 n
+o 9 1 e
+o 10 7 s
+o 14 85 e
+o 15 4 e
+# turn 230
+o 11 7 w
+o 9 2 n
+o 11 1 w
+o 15 5 e
+o 14 86 e
+# turn 231
+o 8 2 e
+o 11 0 w
+o 15 6 e
+o 14 87 e
+o 11 6 s
+# turn 232
+o 8 3 e
+o 12 6 w
+o 14 88 e
+o 15 7 n
+o 11 89 w
+# turn 233
+o 14 89 s
+o 14 7 e
+o 12 5 w
+o 11 88 w
+o 8 4 e
+# turn 234
+o 15 89 e
+o 11 87 w
+o 12 4 w
+o 8 5 s
+o 14 8 s
+# turn 235
+o 15 0 e
+o 11 86 s
+o 15 8 e
+o 9 5 e
+o 12 3 n
+# turn 236
+o 11 3 w
+o 15 9 e
+o 15 1 e
+o 9 6 s
+o 12 86 w
+# turn 237
+o 12 85 s
+o 10 6 e
+o 15 2 e
+o 11 2 w
+o 15 10 n
+# turn 238
+o 10 7 s
+o 15 3 e
+o 11 1 s
+o 13 85 s
+# turn 239
+o 11 7 w
+o 12 1 n
+o 14 85 e
+o 15 4 n
+# turn 240
+o 14 4 s
+o 11 1 w
+o 11 6 s
+o 14 86 e
+# turn 241
+o 9 6 s
+o 12 6 w
+o 11 0 w
+o 15 4 e
+o 14 87 e
+# turn 242
+o 15 5 e
+o 10 6 e
+o 14 88 e
+o 12 5 w
+o 11 89 w
+# turn 243
+o 10 7 s
+o 14 89 s
+o 15 6 e
+o 12 4 w
+o 11 88 w
+# turn 244
+o 15 89 e
+o 11 7 w
+o 11 87 w
+o 15 7 n
+o 12 3 n
+# turn 245
+o 15 0 e
+o 14 7 e
+o 11 3 w
+o 11 86 s
+o 11 6 s
+# turn 246
+o 11 2 w
+o 12 6 w
+o 12 86 w
+o 14 8 s
+o 15 1 e
+# turn 247
+o 15 2 e
+o 12 5 w
+o 11 1 s
+o 15 8 e
+# turn 248
+o 12 1 n
+o 15 3 e
+o 12 4 w
+o 15 9 e
+# turn 249
+o 15 10 n
+o 11 1 w
+o 15 4 n
+o 12 3 n
+# turn 250
+o 14 10 n
+o 14 4 s
+o 11 3 w
+o 11 0 w
+# turn 251
+o 11 2 w
+o 15 4 e
+o 11 89 w
+o 13 10 n
+# turn 252
+o 11 1 s
+o 12 10 n
+o 15 5 e
+# turn 253
+o 11 10 w
+o 12 1 n
+o 15 6 e
+# turn 254
+o 11 9 n
+o 11 1 w
+o 15 7 n
+# turn 255
+o 14 7 e
+o 10 9 n
+# turn 256
+o 9 9 e
+o 14 8 s
+# turn 257
+o 9 10 n
+o 15 8 e
+# turn 258
+o 8 10 n
+o 15 9 e
+# turn 259
+o 15 10 n
+o 7 10 w
+# turn 260
+o 14 10 n
+o 7 9 e
+# turn 261
+o 13 10 n
+o 7 10 n
+# turn 262
+o 12 10 n
+o 6 10 n
+# turn 263
+o 5 10 w
+o 11 10 w
+# turn 264
+o 5 9 w
+o 11 9 n
+# turn 265
+o 10 9 n
+o 5 8 w
+# turn 266
+o 5 7 s
+o 9 9 e

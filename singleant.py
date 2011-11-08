@@ -3,11 +3,13 @@ import logging
 import ants
 import pezz_logging
 import heapq
+import sys
 
 logger = logging.getLogger("pezzant.singleant")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
-fh = logging.FileHandler("bot.txt", mode="w")
+#fh = logging.FileHandler("bot.txt", mode="w")
+fh = logging.StreamHandler(sys.stderr)
 fh.setLevel(loglevel)
 formatter = logging.Formatter(
                 "%(levelname)s "
@@ -27,7 +29,7 @@ class SingleAnt(object):
     This is a generic ant.
     ant = SingleAnt(starting_location, bot, world)
     """
-    def __init__(self, pos, bot, world):
+    def __init__(self, pos, bot, world, init_state):
 
         self.pos = pos
         self.bot = bot
@@ -35,6 +37,7 @@ class SingleAnt(object):
         self.plan_cache = {}
         self.plan_cache_age = 0
         self.max_cache_age = 10
+        self.state = init_state
         
         global ant_ids
         self.id = ant_ids
@@ -46,7 +49,31 @@ class SingleAnt(object):
                 {"ant":self},
                 self.bot
                 )
-            
+    
+    def transition(self, state):
+        """
+        Transition to state and immediate execution    
+        """
+        self.state = state
+        self.log.info("Next state (immediate) %s", self.state)
+        action = getattr(self, state)
+        return action()
+
+    def transition_delayed(self, state):
+        """
+        Transition to state Execution will be the next turn.    
+        """
+        self.state = state
+        self.log.info("Next state (delayed) %s", self.state)
+        return
+
+    def step(self):
+        """
+        Execute the state the FSM is in
+        """
+        action = getattr(self, self.state)
+        action()
+       
     def move_heading(self, direction):
         """
         Move the ant towards a direction.
@@ -64,6 +91,8 @@ class SingleAnt(object):
         new_loc = world.destination(self.pos, direction)
         if (world.unoccupied(new_loc) and new_loc not in self.bot.orders):
             world.issue_order((self.pos, direction))
+            #update the new position
+            self.pos = new_loc
             self.bot.orders[new_loc] = self
             self.log.info("moving to %s", new_loc)
             return True
@@ -131,12 +160,15 @@ class SingleAnt(object):
         next_loc = path.pop(0)
         self.log.info("Plan succeded, next location is %s", next_loc)
         direction = self.world.direction(self.pos, next_loc)
-        
+       
+        if len(direction) == 0:
+            self.log.error("Empty direction!")
+            self.reset_cache()
+            return False
+
         direction  = direction[0]
         res = self.move_heading(direction)
         if res:
-            #update the new position
-            self.pos = next_loc
             return True
         else:
             #something went wrong when moving
@@ -190,10 +222,3 @@ class SingleAnt(object):
                 heapq.heappush(enemies,(d,e[0]) )
 
         return enemies
-
-
-    def step(self):
-        """
-        Perform a single step. Subclass and implement    
-        """
-        pass
