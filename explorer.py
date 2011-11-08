@@ -1,6 +1,9 @@
+import MyBot
+ants = MyBot.ants
 import singleant
 import random
-import ants
+#import ants
+
 
 
 class Explorer(singleant.SingleAnt):

@@ -1,5 +1,6 @@
+import MyBot
+ants = MyBot.ants
 import singleant
-import ants
 import random
 import heapq
 

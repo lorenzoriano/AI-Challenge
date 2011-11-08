@@ -1,6 +1,7 @@
+import MyBot
+ants = MyBot.ants
 import astar
 import logging
-import ants
 import pezz_logging
 import heapq
 import sys
@@ -8,8 +9,8 @@ import sys
 logger = logging.getLogger("pezzant.singleant")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
-#fh = logging.FileHandler("bot.txt", mode="w")
-fh = logging.StreamHandler(sys.stderr)
+fh = logging.FileHandler("bot.txt", mode="w")
+#fh = logging.StreamHandler(sys.stderr)
 fh.setLevel(loglevel)
 formatter = logging.Formatter(
                 "%(levelname)s "

@@ -1,17 +1,24 @@
 #!/usr/bin/env python
-from ants import Ants
+import ants_orig as ants
+from ants_orig import Ants
+#from ants import Ants
 import pezz_logging
 import logging
 import explorer_dispatcher
 import warrior_dispatcher
+from timetracker import TimeTracker
+
+import time
 import sys
 import random
+import cProfile
+import signal
 
 logger = logging.getLogger("pezzant")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
-fh = logging.StreamHandler(sys.stderr)
-#fh = logging.FileHandler("bot.txt", mode="w")
+#fh = logging.StreamHandler(sys.stderr)
+fh = logging.FileHandler("bot.txt", mode="w")
 fh.setLevel(loglevel)
 formatter = logging.Formatter(
                 "%(levelname)s "
@@ -23,6 +30,8 @@ formatter = logging.Formatter(
                 )
 fh.setFormatter(formatter)
 logger.addHandler(fh)
+
+profiler = cProfile.Profile()
 
 class TurnLogger(logging.LoggerAdapter):
     def process(self, ):
@@ -60,6 +69,7 @@ class PezzBot:
         self.unseen = set( (r,c) for r in xrange(world.rows)
                                  for c in xrange(world.cols)
                          )
+        self.time_tracker = TimeTracker(0)
 
     def iterate_ants_loc(self):
         """
@@ -84,9 +94,11 @@ class PezzBot:
 
     # do turn is run once per turn
     def do_turn(self, world):
+        
         self.log.info("----------")
         self.log.info("Start turn")
         self.turn += 1
+        #self.time_tracker.reset()
 
         #clear orders
         self.orders = {}
@@ -103,19 +115,27 @@ class PezzBot:
         self.update_ants()
         iter_ants = self.ants[:]
         random.shuffle(iter_ants)
-        for ant in iter_ants:
-            #try:
-                if not ant.check_status():
-                    self.ants.remove(ant)
-                    self.explorer_dispatcher.remove_ant(ant)
-                    self.warrior_dispatcher.remove_ant(ant)
-                else:
-                    ant.step()
-            #except Exception, e:
-            #    self.log.error("Got an exception %s for ant %s", e, ant)
+        for ant_number, ant in enumerate(iter_ants):
+            self.time_tracker.tick()
+            if not ant.check_status():
+                self.ants.remove(ant)
+                self.explorer_dispatcher.remove_ant(ant)
+                self.warrior_dispatcher.remove_ant(ant)
+            else:
+                ant.step()
 
+            avg_time = self.time_tracker.tock()
+            if world.time_remaining() - 10*avg_time < 0:
+                self.log.warning("Timeout incoming, bail out!")
+                break
+
+        self.log.info("Average time: %f", avg_time)
         self.log.info("Time remaining: %f", world.time_remaining())
-if __name__ == '__main__':
+        if self.turn == 150:
+            profiler.dump_stats("profiler.prof")
+
+
+def main():
     try:
         # if run is passed a class with a do_turn method, it will do the work
         # this is not needed, in which case you will need to write your own
@@ -123,3 +143,8 @@ if __name__ == '__main__':
         Ants.run(PezzBot())
     except KeyboardInterrupt:
         print('ctrl-c, leaving ...')
+
+if __name__ == '__main__':
+    profiler.runctx("main()", globals(), locals())
+
+

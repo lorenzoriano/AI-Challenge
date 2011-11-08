@@ -1,7 +1,0 @@
-turn  207 bot 3 invalid actions:
-o 26 85 e # not player ant
-turn  208 bot 3 invalid actions:
-o 26 86 n # not player ant
-turn  209 bot 3 invalid actions:
-o 25 86 e # not player ant
-turn  230 bot 3 timed out

@@ -6,6 +6,8 @@ import time
 from collections import defaultdict
 from math import sqrt
 
+timingf = time.time
+
 MY_ANT = 0
 ANTS = 0
 DEAD = -1
@@ -85,7 +87,8 @@ class Ants():
     def update(self, data):
         'parse engine input and update the game state'
         # start timer
-        self.turn_start_time = time.clock()
+        #self.turn_start_time = time.clock()
+        self.turn_start_time = timingf()
         
         # reset vision
         self.vision = None
@@ -132,7 +135,7 @@ class Ants():
                             self.hill_list[(row, col)] = owner
                         
     def time_remaining(self):
-        return self.turntime - int(1000 * (time.clock() - self.turn_start_time))
+        return self.turntime - int(1000 * (timingf() - self.turn_start_time))
     
     def issue_order(self, order):
         'issue an order by writing the proper ant location and direction'

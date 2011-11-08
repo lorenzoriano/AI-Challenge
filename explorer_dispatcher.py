@@ -7,8 +7,8 @@ import sys
 logger = logging.getLogger("pezzant.explorer_dispatcher")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
-#fh = logging.FileHandler("bot.txt", mode="w")
-fh = logging.StreamHandler(sys.stderr)
+fh = logging.FileHandler("bot.txt", mode="w")
+#fh = logging.StreamHandler(sys.stderr)
 fh.setLevel(loglevel)
 formatter = logging.Formatter(
                 "%(levelname)s "

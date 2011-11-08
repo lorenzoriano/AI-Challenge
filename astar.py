@@ -44,10 +44,13 @@ def pathfind(start_pos, goal_pos, bot, world):
         """
         Iterator that returns all the non-occupied cells around loc
         """
+
+        toret = []
         for direction in ('s','e','w','n'):
             new_loc = world.destination(loc, direction)
             if world.passable(new_loc):
-                yield new_loc
+                toret.append(new_loc)
+        return toret
     
     def cost(a, b):
         """
