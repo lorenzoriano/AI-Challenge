@@ -75,7 +75,7 @@ class Explorer(singleant.SingleAnt):
         if len(hills_dist) == 0:
             self.log.warning("I fear my hill is gone!")
             return True
-        if min(hills_dist) < 10:
+        if min(hills_dist) < 20:
             return False
         
         if food_loc is None:
