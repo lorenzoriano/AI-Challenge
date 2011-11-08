@@ -5,7 +5,6 @@ import random
 import time
 from collections import defaultdict
 from math import sqrt
-import numpy as np
 
 MY_ANT = 0
 ANTS = 0
@@ -13,7 +12,12 @@ DEAD = -1
 LAND = -2
 FOOD = -3
 WATER = -4
-UNSEEN = -5
+
+PLAYER_ANT = 'abcdefghij'
+HILL_ANT = string = 'ABCDEFGHI'
+PLAYER_HILL = string = '0123456789'
+MAP_OBJECT = '?%*.!'
+MAP_RENDER = PLAYER_ANT + HILL_ANT + PLAYER_HILL + MAP_OBJECT
 
 AIM = {'n': (-1, 0),
        'e': (0, 1),
@@ -32,12 +36,6 @@ BEHIND = {'n': 's',
           'e': 'w',
           'w': 'e'}
 
-def debug(*msgs):
-    text = ' '.join(str(m) for m in msgs) + '\n'
-    sys.stderr.write(text)
-    sys.stderr.flush()
-
-
 class Ants():
     def __init__(self):
         self.cols = None
@@ -47,19 +45,17 @@ class Ants():
         self.ant_list = {}
         self.dead_list = defaultdict(list)
         self.food_list = []
-        self.visible_food_list = []
         self.turntime = 0
         self.loadtime = 0
         self.turn_start_time = None
-        self.visible = None
+        self.vision = None
         self.viewradius2 = 0
         self.attackradius2 = 0
         self.spawnradius2 = 0
         self.turns = 0
-        self.turn = -1
 
     def setup(self, data):
-        "Parse initial input and setup starting game state"
+        'parse initial input and setup starting game state'
         for line in data.split('\n'):
             line = line.strip().lower()
             if len(line) > 0:
@@ -83,97 +79,69 @@ class Ants():
                     self.spawnradius2 = int(tokens[1])
                 elif key == 'turns':
                     self.turns = int(tokens[1])
-        self.map = np.ndarray((self.rows, self.cols), dtype = np.int8)
-        self.map.fill(UNSEEN)
-        self.visible = np.zeros((self.rows, self.cols), dtype = np.bool)
-        self._vision_setup()
+        self.map = [[LAND for col in range(self.cols)]
+                    for row in range(self.rows)]
 
     def update(self, data):
-        "Parse engine input and update the game state"
+        'parse engine input and update the game state'
         # start timer
         self.turn_start_time = time.clock()
+        
+        # reset vision
+        self.vision = None
         
         # clear hill, ant and food data
         self.hill_list = {}
         for row, col in self.ant_list.keys():
-            self.map[row,col] = LAND
+            self.map[row][col] = LAND
         self.ant_list = {}
         for row, col in self.dead_list.keys():
-            self.map[row,col] = LAND
+            self.map[row][col] = LAND
         self.dead_list = defaultdict(list)
-        self.visible_food_list = []
-        visible_hill_list = {}
+        for row, col in self.food_list:
+            self.map[row][col] = LAND
+        self.food_list = []
         
         # update map and create new ant and food lists
         for line in data.split('\n'):
             line = line.strip().lower()
             if len(line) > 0:
                 tokens = line.split()
-                if len(tokens) == 2:
-                    if tokens[0] == 'turn':
-                        self.turn = int(tokens[1])
-                elif len(tokens) >= 3:
+                if len(tokens) >= 3:
                     row = int(tokens[1])
                     col = int(tokens[2])
                     if tokens[0] == 'w':
-                        self.map[row,col] = WATER
+                        self.map[row][col] = WATER
                     elif tokens[0] == 'f':
-                        self.map[row,col] = FOOD
-                        self.visible_food_list.append((row, col))
+                        self.map[row][col] = FOOD
+                        self.food_list.append((row, col))
                     else:
                         owner = int(tokens[3])
                         if tokens[0] == 'a':
-                            self.map[row,col] = owner
+                            self.map[row][col] = owner
                             self.ant_list[(row, col)] = owner
                         elif tokens[0] == 'd':
                             # food could spawn on a spot where an ant just died
                             # don't overwrite the space unless it is land
-                            #if self.map[row][col] == LAND:
-                            #    self.map[row][col] = DEAD
+                            if self.map[row][col] == LAND:
+                                self.map[row][col] = DEAD
                             # but always add to the dead list
                             self.dead_list[(row, col)].append(owner)
                         elif tokens[0] == 'h':
                             owner = int(tokens[3])
-                            visible_hill_list[(row, col)] = owner
-        self._update_visible()
-
-        # Update food
-        new_food = []
-        for pos in self.food_list:
-            if self.visible[pos]:
-                self.map[pos] = LAND
-            else:
-                # Assume still there
-                new_food.append(pos)
-        for pos in self.visible_food_list:
-            self.map[pos] = FOOD
-        self.food_list = new_food + self.visible_food_list
-
-        # Update hills
-        for pos, owner in self.hill_list.items():
-            if self.visible[pos] and pos not in visible_hill_list:
-                del self.hill_list[pos]
-        self.hill_list.update(visible_hill_list)
-
+                            self.hill_list[(row, col)] = owner
+                        
     def time_remaining(self):
         return self.turntime - int(1000 * (time.clock() - self.turn_start_time))
     
-    def issue_order(self, ant_loc, dir_or_dest = None):
-        "Issue an order by either (ant_loc, dir) or (ant_loc, dest) pair"
-        if dir_or_dest == None:
-            # Compatibility with old pack
-            ant_loc, dir_or_dest = ant_loc
-        if isinstance(dir_or_dest, str):
-            direction = dir_or_dest
-        elif len(dir_or_dest) == 2:
-            direction = self.direction(ant_loc, dir_or_dest)[0]
-        else:
-            raise ValueError("Invalid order " + str((ant_loc, dir_or_dest)))
-        sys.stdout.write('o %s %s %s\n' % (ant_loc[0], ant_loc[1], direction))
+    def issue_order(self, order):
+        'issue an order by writing the proper ant location and direction'
+        (row, col), direction = order
+        sys.stdout.write('o %s %s %s\n' % (row, col, direction))
         sys.stdout.flush()
         
     def finish_turn(self):
-        "Finish the turn by writing the go line"
+        'finish the turn by writing the go line'
         sys.stdout.write('go\n')
         sys.stdout.flush()
     
@@ -197,41 +165,27 @@ class Ants():
                     if owner != MY_ANT]
 
     def food(self):
-        "Return a list of all known food locations (visible or not)"
+        'return a list of all food locations'
         return self.food_list[:]
 
     def passable(self, loc):
-        "True if seen and not water"
+        'true if not water'
         row, col = loc
-        return self.map[row,col] not in (WATER, UNSEEN)
+        return self.map[row][col] != WATER
     
     def unoccupied(self, loc):
-        "True if no ants are at the location"
+        'true if no ants are at the location'
         row, col = loc
-        return self.map[row,col] in (LAND, DEAD)
-
-    def neighbours(self, pos):
-        "Returns the four neighbours of a position"
-        return [((pos[0]-1)%self.rows, pos[1]),
-                (pos[0], (pos[1]+1)%self.cols),
-                ((pos[0]+1)%self.rows, pos[1]),
-                (pos[0], (pos[1]-1)%self.cols)]
-
-    def neighbours_and_dirs(self, pos):
-        "Returns four position, direction pairs"
-        return ((((pos[0]-1)%self.rows, pos[1]), 'n'),
-                ((pos[0], (pos[1]+1)%self.cols), 'e'),
-                (((pos[0]+1)%self.rows, pos[1]), 's'),
-                ((pos[0], (pos[1]-1)%self.cols), 'w'))
+        return self.map[row][col] in (LAND, DEAD, FOOD)
 
     def destination(self, loc, direction):
-        "Calculate a new location given the direction and wrap correctly"
+        'calculate a new location given the direction and wrap correctly'
         row, col = loc
         d_row, d_col = AIM[direction]
         return ((row + d_row) % self.rows, (col + d_col) % self.cols)        
 
     def distance(self, loc1, loc2):
-        "Calculate the closest distance between two locations"
+        'calculate the closest distance between to locations'
         row1, col1 = loc1
         row2, col2 = loc2
         d_col = min(abs(col1 - col2), self.cols - abs(col1 - col2))
@@ -239,7 +193,7 @@ class Ants():
         return d_row + d_col
 
     def direction(self, loc1, loc2):
-        "Return a list of the 1 or 2 fastest (closest) directions to reach a location"
+        'determine the 1 or 2 fastest (closest) directions to reach a location'
         row1, col1 = loc1
         row2, col2 = loc2
         height2 = self.rows//2
@@ -267,68 +221,44 @@ class Ants():
                 d.append('w')
         return d
 
-    def _vision_setup(self):
-        # Precalculate a circular mask used in _update_visible
-        viewradius = int(sqrt(self.viewradius2))
-        diameter = viewradius * 2 + 1
-        self.vision_disc = np.zeros((diameter, diameter), dtype = np.bool)
-        for y, x in np.ndindex(*self.vision_disc.shape):
-            if (viewradius - y)**2 + (viewradius - x)**2 <= self.viewradius2:
-                self.vision_disc[y, x] = True
+    def visible(self, loc):
+        ' determine which squares are visible to the given player '
 
-    def _update_visible(self):
-        self.visible.fill(False)
-        viewradius = int(sqrt(self.viewradius2))
-        diameter = viewradius * 2 + 1
-
-        for a_row, a_col in self.my_ants():
-            top = (a_row - viewradius) % self.rows
-            left = (a_col - viewradius) % self.cols
-            # Height/width of the top and left parts of vision disc (which might actually
-            # be draw at the bottom or right of the map) -- rest of vision disc wraps over.
-            toph = min(diameter, self.rows - top)
-            leftw = min(diameter, self.cols - left)
-            if toph == diameter and leftw == diameter:
-                self.visible[top:top+toph, left:left+leftw] |= self.vision_disc
-            else:
-                bottomh = diameter - toph
-                rightw = diameter - leftw
-
-                self.visible[top:top+toph, left:left+leftw] |= self.vision_disc[:toph, :leftw]
-                self.visible[:bottomh, left:left+leftw] |= self.vision_disc[toph:, :leftw]
-                self.visible[top:top+toph, :rightw] |= self.vision_disc[:toph, leftw:]
-                self.visible[:bottomh, :rightw] |= self.vision_disc[toph:, leftw:]
-            
-        # Any non-land UNSEEN tiles have already been changed to whatever in update()
-        self.map[(self.map == UNSEEN) & self.visible] = LAND
+        if self.vision == None:
+            if not hasattr(self, 'vision_offsets_2'):
+                # precalculate squares around an ant to set as visible
+                self.vision_offsets_2 = []
+                mx = int(sqrt(self.viewradius2))
+                for d_row in range(-mx,mx+1):
+                    for d_col in range(-mx,mx+1):
+                        d = d_row**2 + d_col**2
+                        if d <= self.viewradius2:
+                            self.vision_offsets_2.append((
+                                d_row%self.rows-self.rows,
+                                d_col%self.cols-self.cols
+                            ))
+            # set all spaces as not visible
+            # loop through ants and set all squares around ant as visible
+            self.vision = [[False]*self.cols for row in range(self.rows)]
+            for ant in self.my_ants():
+                a_row, a_col = ant
+                for v_row, v_col in self.vision_offsets_2:
+                    self.vision[a_row+v_row][a_col+v_col] = True
+        row, col = loc
+        return self.vision[row][col]
     
     def render_text_map(self):
-        """Return a pretty text representation of the map"""
-
-        icons = 'abcdefghijABCDEFGHIJ0123456789   #*,!'
-        lookup = np.ndarray(len(icons), '|S1', buffer = icons)
-        result = lookup[self.map]
-
-        # Visible land gets . rest gets ,
-        result[(self.visible) & (self.map == LAND)] = '.'
-
-        for pos, owner in self.hill_list.iteritems():
-            if self.map[pos] >= ANTS:
-                # hill already destroyed if owner not the same as ant owner
-                result[pos] = lookup[self.map[pos] + 10]
-            else:
-                result[pos] = lookup[owner + 20]
-
+        'return a pretty string representing the map'
         tmp = ''
-        for row in result:
-            tmp += '# ' + row.view(('S', row.shape[0]))[0] + '\n'
+        for row in self.map:
+            tmp += '# %s\n' % ''.join([MAP_RENDER[col] for col in row])
         return tmp
 
     # static methods are not tied to a class and don't have self passed in
     # this is a python decorator
     @staticmethod
     def run(bot):
-        "Parse input, update game state and call the bot classes do_turn method"
+        'parse input, update game state and call the bot classes do_turn method'
         ants = Ants()
         map_data = ''
         while(True):
