@@ -13,19 +13,21 @@ namespace bp = boost::python;
 
 class Matrix : public Graph {
 	public:
-	Matrix(PyObject* mat) {
-		this->mat = PyArray_FROM_O(mat);
+	Matrix(PyObject* o) {
+		mat = PyArray_FROMANY(o, NPY_DOUBLE,1,1, NPY_CARRAY);
+		cols = PyArray_DIM(mat, 1);
+		rows = PyArray_DIM(mat, 0);
 	}
 
-	void setMat(PyObject* value) {
-		mat = PyArray_FROM_O(value);
+	void setMat(PyObject* o) {
+		mat = PyArray_FROMANY(o, NPY_DOUBLE,1,1, NPY_CARRAY);
+		cols = PyArray_DIM(mat, 1);
+		rows = PyArray_DIM(mat, 0);
 	}
 
 	void NodeToXY( void* node, int* row, int* col ) 
 	{
 		int index = (MP_UPTR)node;
-		int cols = PyArray_DIM(mat, 1);
-		int rows = PyArray_DIM(mat, 0);
 		
 		int r = index / cols;
 		if (r < 0)
@@ -44,8 +46,6 @@ class Matrix : public Graph {
 
 	void* XYToNode( int r, int c )
 	{
-		int cols = PyArray_DIM(mat, 1);
-		int rows = PyArray_DIM(mat, 0);
 		if (r < 0)
 			r = rows + r;
 		else if (r > rows)
@@ -58,7 +58,16 @@ class Matrix : public Graph {
 		return (void*) ( r*cols+ c );
 	}
 	
-	int mat_cost(int x, int y) {
+	int mat_cost(int r, int c) {
+		if (r < 0)
+			r = rows + r;
+		else if (r > rows)
+			r = r - rows;
+		if (c < 0)
+			c = cols + c;
+		else if (c > cols)
+			c = c - cols;
+		PyArray_GETPTR2	(mat,r, c);
 		return 1;
 	}
 
@@ -69,9 +78,6 @@ class Matrix : public Graph {
 
 		NodeToXY(stateStart, &row1, &col1);
 		NodeToXY(stateEnd, &row2, &col2);
-		
-		int cols = PyArray_DIM(mat, 1);
-		int rows = PyArray_DIM(mat, 0);
 		
 		int d_col = min(abs(col1 - col2), cols - abs(col1 - col2));
 		int d_row = min(abs(row1 - row2), rows - abs(row1 - row2));
@@ -105,6 +111,7 @@ class Matrix : public Graph {
 
 	private:
 	PyObject* mat;
+	int rows, cols;
 };
 
 class Astar : public MicroPather {
