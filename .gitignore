@@ -1,4 +1,8 @@
 *~
+tools/
+lib.linux-x86_64-2.7/
+bot.txt
+micropather_1_2_0/
 game_logs/
 .ropeproject/
 .project

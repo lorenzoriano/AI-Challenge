@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import ants_orig as ants
-from ants_orig import Ants
+Ants = ants.Ants
+
 #from ants import Ants
 import pezz_logging
 import logging
@@ -31,7 +32,8 @@ formatter = logging.Formatter(
 fh.setFormatter(formatter)
 logger.addHandler(fh)
 
-profiler = cProfile.Profile()
+#profiler = cProfile.Profile()
+profiler = None
 
 class TurnLogger(logging.LoggerAdapter):
     def process(self, ):
@@ -131,7 +133,7 @@ class PezzBot:
 
         self.log.info("Average time: %f", avg_time)
         self.log.info("Time remaining: %f", world.time_remaining())
-        if self.turn == 150:
+        if profiler is not None and self.turn == 150:
             profiler.dump_stats("profiler.prof")
 
 
@@ -145,6 +147,8 @@ def main():
         print('ctrl-c, leaving ...')
 
 if __name__ == '__main__':
-    profiler.runctx("main()", globals(), locals())
-
+    if profiler is not None:
+        profiler.runctx("main()", globals(), locals())
+    else:
+        main()
 
