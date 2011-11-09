@@ -1,5 +1,5 @@
 #include <boost/python.hpp>
-#include <arrayobject.h>
+#include <numpy/arrayobject.h>
 #include "micropather.h"
 #include <vector>
 #include <algorithm>
