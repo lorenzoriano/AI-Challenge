@@ -6,21 +6,47 @@
 #include <cstdlib>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/utility.hpp>
+#include <exception>
 
 using namespace micropather;
 namespace bp = boost::python;
+
+struct astar_value_exception: std::exception
+{
+    astar_value_exception(std::string str) {
+	bp::handle<> h;
+	msg = str;
+    }
+
+    const char* what() const throw() {
+	return msg.c_str();
+    }
+
+    virtual ~astar_value_exception() throw() {
+
+    }
+
+    private:
+	std::string msg;
+};
 
 
 class Matrix : public Graph {
 	public:
 	Matrix(PyObject* o) {
-		mat = PyArray_FROMANY(o, NPY_DOUBLE,1,1, NPY_CARRAY);
+		mat_handle = bp::handle<PyObject>(o);
+		mat = PyArray_FROMANY(mat_handle.get(), NPY_DOUBLE,2,2, NPY_CARRAY);
+		if (mat == NULL)
+			throw astar_value_exception("Wrong array!");
 		cols = PyArray_DIM(mat, 1);
 		rows = PyArray_DIM(mat, 0);
 	}
 
 	void setMat(PyObject* o) {
-		mat = PyArray_FROMANY(o, NPY_DOUBLE,1,1, NPY_CARRAY);
+		mat_handle = bp::handle<PyObject>(o);
+		mat = PyArray_FROMANY(mat_handle.get(), NPY_DOUBLE,2,2, NPY_CARRAY);
+		if (mat == NULL)
+			throw astar_value_exception("Wrong array!");
 		cols = PyArray_DIM(mat, 1);
 		rows = PyArray_DIM(mat, 0);
 	}
@@ -30,14 +56,14 @@ class Matrix : public Graph {
 		int index = (MP_UPTR)node;
 		
 		int r = index / cols;
-		if (r < 0)
-			r = rows + r;
-		else if (r > rows)
+		while (r < 0)
+			r = r + rows;
+		while (r >= rows)
 			r = r - rows;
 		int c = index - r * cols;
-		if (c < 0)
-			c = cols + c;
-		else if (c > cols)
+		while (c < 0)
+			c = c + cols;
+		while (c >= cols)
 			c = c - cols;
 
 		*row = r;
@@ -46,26 +72,26 @@ class Matrix : public Graph {
 
 	void* XYToNode( int r, int c )
 	{
-		if (r < 0)
+		while (r < 0)
 			r = rows + r;
-		else if (r > rows)
+		while (r >= rows)
 			r = r - rows;
-		if (c < 0)
+		while (c < 0)
 			c = cols + c;
-		else if (c > cols)
+		while (c >= cols)
 			c = c - cols;
 		
 		return (void*) ( r*cols+ c );
 	}
 	
 	int mat_cost(int r, int c) {
-		if (r < 0)
+		while (r < 0)
 			r = rows + r;
-		else if (r > rows)
+		while (r >= rows)
 			r = r - rows;
-		if (c < 0)
+		while (c < 0)
 			c = cols + c;
-		else if (c > cols)
+		while (c >= cols)
 			c = c - cols;
 		PyArray_GETPTR2	(mat,r, c);
 		return 1;
@@ -89,7 +115,6 @@ class Matrix : public Graph {
 		int x, y;
 		const int dx[4] = { 1, 0, -1, 0, };
 		const int dy[4] = { 0, 1,  0,-1, };
-		const float cost[4] = { 1.0f, 1.0f, 1.0f, 1.0f};
 
 		NodeToXY( node, &x, &y );
 
@@ -100,7 +125,7 @@ class Matrix : public Graph {
 			int c = mat_cost( nx, ny );
 			if ( c > 0 ) {
 				StateCost nodeCost = { XYToNode( nx, ny ), 
-							cost[i] };
+							c };
 				neighbors->push_back( nodeCost );
 			}
 		}
@@ -110,13 +135,14 @@ class Matrix : public Graph {
 	}
 
 	private:
+	bp::handle<PyObject> mat_handle;
 	PyObject* mat;
 	int rows, cols;
 };
 
-class Astar : public MicroPather {
+class AstarMatrix : public MicroPather {
 	public:
-	Astar(Matrix *graph, unsigned allocate, unsigned typicalAdjacent) : 
+	AstarMatrix(Matrix *graph, unsigned allocate, unsigned typicalAdjacent) : 
 		MicroPather(graph, allocate, typicalAdjacent) 
 	{matrix = graph;}
 
@@ -156,12 +182,12 @@ class Astar : public MicroPather {
 BOOST_PYTHON_MODULE(libastar) {
 	import_array();
 	
-	bp::class_<Matrix>("AstarMatrix", bp::init<PyObject*>())
+	bp::class_<Matrix>("MatrixHolder", bp::init<PyObject*>())
 	.def("setMat", &Matrix::setMat)
 	;
 
-	bp::class_<Astar, boost::noncopyable>("Astar", bp::init<Matrix*, unsigned, unsigned>())
-	.def("solve", &Astar::solve)
-	.def("reset", &Astar::Reset)
+	bp::class_<AstarMatrix, boost::noncopyable>("AstarMatrix", bp::init<Matrix*, unsigned, unsigned>())
+	.def("solve", &AstarMatrix::solve)
+	.def("reset", &AstarMatrix::Reset)
 	;
 }
