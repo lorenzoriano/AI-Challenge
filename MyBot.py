@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-import ants_orig as ants
+import ants_numpy as ants
+#import ants_orig as ants
 Ants = ants.Ants
 
+import castar
 #from ants import Ants
 import pezz_logging
 import logging
@@ -35,13 +37,6 @@ logger.addHandler(fh)
 #profiler = cProfile.Profile()
 profiler = None
 
-class TurnLogger(logging.LoggerAdapter):
-    def process(self, ):
-        """
-    
-        """
-        pass
-
 class PezzBot:
     def __init__(self):
         self.ants = []
@@ -72,6 +67,7 @@ class PezzBot:
                                  for c in xrange(world.cols)
                          )
         self.time_tracker = TimeTracker(0)
+        castar.setup(world.map)
 
     def iterate_ants_loc(self):
         """
@@ -99,8 +95,8 @@ class PezzBot:
         
         self.log.info("----------")
         self.log.info("Start turn")
+        castar.setup(world.map)
         self.turn += 1
-        #self.time_tracker.reset()
 
         #clear orders
         self.orders = {}
@@ -111,14 +107,13 @@ class PezzBot:
 
         #removing visible locations
         for loc in self.unseen.copy():
-            if world.visible(loc):
+            if world.visible[loc[0], loc[1]]:
                 self.unseen.discard(loc)
 
         self.update_ants()
         iter_ants = self.ants[:]
         random.shuffle(iter_ants)
         for ant_number, ant in enumerate(iter_ants):
-            self.time_tracker.tick()
             if not ant.check_status():
                 self.ants.remove(ant)
                 self.explorer_dispatcher.remove_ant(ant)
@@ -126,12 +121,11 @@ class PezzBot:
             else:
                 ant.step()
 
-            avg_time = self.time_tracker.tock()
-            if world.time_remaining() - 10*avg_time < 0:
+            #avg_time = self.time_tracker.tock()
+            if world.time_remaining() < 50:
                 self.log.warning("Timeout incoming, bail out!")
                 break
 
-        self.log.info("Average time: %f", avg_time)
         self.log.info("Time remaining: %f", world.time_remaining())
         if profiler is not None and self.turn == 150:
             profiler.dump_stats("profiler.prof")

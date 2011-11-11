@@ -1,6 +1,6 @@
 import MyBot
 ants = MyBot.ants
-import astar
+import castar
 import logging
 import pezz_logging
 import heapq
@@ -142,7 +142,7 @@ class SingleAnt(object):
         col = col % self.world.cols        
         loc = (row, col)
 
-        path = astar.pathfind(self.pos, loc, self.bot, self.world)
+        path = castar.pathfind(self.pos, loc, self.bot, self.world)
         self.plan_cache = {loc:path}
         self.plan_cache_age = 0
         return path

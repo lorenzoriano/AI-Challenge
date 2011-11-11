@@ -7,6 +7,8 @@ from collections import defaultdict
 from math import sqrt
 import numpy as np
 
+timingf = time.clock
+
 MY_ANT = 0
 ANTS = 0
 DEAD = -1
@@ -91,7 +93,7 @@ class Ants():
     def update(self, data):
         "Parse engine input and update the game state"
         # start timer
-        self.turn_start_time = time.clock()
+        self.turn_start_time = timingf()
         
         # clear hill, ant and food data
         self.hill_list = {}
@@ -156,7 +158,8 @@ class Ants():
         self.hill_list.update(visible_hill_list)
 
     def time_remaining(self):
-        return self.turntime - int(1000 * (time.clock() - self.turn_start_time))
+        return self.turntime - int(1000 * (timingf() - self.turn_start_time))
+        #return self.turntime - int(1000 * (time.clock() - self.turn_start_time))
     
     def issue_order(self, ant_loc, dir_or_dest = None):
         "Issue an order by either (ant_loc, dir) or (ant_loc, dest) pair"
@@ -351,7 +354,7 @@ class Ants():
                 break
             except KeyboardInterrupt:
                 raise
-            except:
-                # don't raise error or return so that bot attempts to stay alive
-                traceback.print_exc(file=sys.stderr)
-                sys.stderr.flush()
+            #except:
+            #    # don't raise error or return so that bot attempts to stay alive
+            #    traceback.print_exc(file=sys.stderr)
+            #    sys.stderr.flush()
