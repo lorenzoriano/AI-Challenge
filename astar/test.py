@@ -32,6 +32,17 @@ def pathfind(start_pos, goal_pos, bot, world):
     else:
         return path[1:]
 
+def find_near(start_pos, max_cost):
+    """
+    Find all the cells within max_cost distance.
+    Returns a list of the cells, empty if no cell
+    was found. The starting cell will not be included.
+    """
+    cells = astar_o.solve_for_near_states(start_pos, max_cost)
+    if len(cells) == 0:
+        return cells
+    else:
+        return cells[1:]
 
 cumtime = 0.0
 nsteps = 1000
@@ -39,8 +50,8 @@ rows = 300
 cols = 300
 for i in xrange(nsteps):
     fmat = np.random.random( (rows,cols))
-    fmat[fmat>0.8] = 1
-    fmat[fmat<=0.8] = -4
+    fmat[fmat>0.2] = 1
+    fmat[fmat<=0.2] = -4
 
     mat = fmat.astype(np.int8)
     rs = randrange(0,rows)
@@ -54,4 +65,27 @@ for i in xrange(nsteps):
     
     cumtime += (time.time() - now)
 
-print "Average time: %f" % (cumtime/nsteps)
+print "Find path: average time per step: %f" % (cumtime/nsteps)
+cumtime = 0.0
+nsteps = 1000
+radius = 150.0
+lengths = 0.0
+for i in xrange(nsteps):
+    fmat = np.random.random( (rows,cols))
+    fmat[fmat>0.2] = 1
+    fmat[fmat<=0.2] = -4
+
+    mat = fmat.astype(np.int8)
+    row = randrange(0,rows)
+    col = randrange(0,cols)
+    
+    now = time.time()
+    setup(mat)
+    l = find_near((row,col), radius)
+    
+    cumtime += (time.time() - now)
+    lengths += len(l)
+
+
+print "Find near: average time per step: %f" % (cumtime/nsteps)
+print "Average cells length: %f" % (lengths / nsteps)

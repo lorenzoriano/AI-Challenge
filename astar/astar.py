@@ -29,6 +29,9 @@ class AstarMatrix(object):
 
     def solve(self, start, goal):
         return _lib.AstarMatrix_solve(self.obj, start, goal)
+    
+    def solve_for_near_states(self, start, cost):
+        return _lib.AstarMatrix_solve_for_near_states(self.obj, start, cost)
 
     def reset(self,):
         return _lib.AstarMatrix_reset(self.obj)

@@ -219,6 +219,55 @@ class AstarMatrix : public MicroPather {
 		return tuple_ret;
 	}
 
+	PyObject* solve_for_near_states(PyObject* start, float maxCost) {
+		
+		//int SolveForNearStates( void* startState, std::vector< StateCost >* near, float maxCost );
+		
+		if (!PySequence_Check(start)) {
+			PyErr_SetString(PyExc_ValueError, "start has to be a tuple-like");
+			return NULL;
+		}
+		PyObject *val;
+		val = PySequence_GetItem(start, 0);
+		if (val == NULL) {
+			PyErr_SetString(PyExc_ValueError, "Error accessing element 0 of start");
+			return NULL;
+		}
+		int row = PyInt_AsLong(val);
+
+		val = PySequence_GetItem(start, 1);
+		if (val == NULL) {
+			PyErr_SetString(PyExc_ValueError, "Error accessing element 1 of start");
+			return NULL;
+		}
+		int col = PyInt_AsLong(val);
+
+		void* startState = matrix->XYToNode(row, col);
+		std::vector<micropather::StateCost> vector_of_states;
+		int success = MicroPather::SolveForNearStates(startState, &vector_of_states, maxCost);
+
+		if (success == NO_SOLUTION)
+			return PyList_New(0);
+			
+		PyObject* found_states = PyList_New(vector_of_states.size());
+		Py_ssize_t pos = 0;
+		for (std::vector<StateCost>::iterator i= vector_of_states.begin(); 
+				i != vector_of_states.end(); i++) {
+				
+			int row, col;
+			matrix->NodeToXY(i->state, &row, &col);
+			PyObject* tuple_element = PyTuple_New(2);
+			PyTuple_SetItem(tuple_element,0, PyInt_FromLong(row));
+			PyTuple_SetItem(tuple_element,1, PyInt_FromLong(col));
+			PyList_SetItem(found_states, pos, tuple_element);	
+			pos++;
+		}
+		//std::cerr<<"Result: ";
+		//PyObject_Print(found_states, stderr, 0);
+		//std::cerr<<"\n";
+		return found_states;
+	}
+
 	protected:
 	std::vector<void*> path;
 	Matrix* matrix;
@@ -296,6 +345,20 @@ AstarMatrix_solve(PyObject *dummy, PyObject *args) {
 }
 
 static PyObject* 
+AstarMatrix_solve_for_near_states(PyObject *dummy, PyObject *args) {
+	
+	ssize_t astar_ptr;
+	double cost;
+	PyObject* start;
+
+	if (!PyArg_ParseTuple(args, "nOd", &astar_ptr, &start, &cost))
+        	return NULL;
+	
+	AstarMatrix* astar = (AstarMatrix*)astar_ptr;
+	return astar->solve_for_near_states(start, cost);
+}
+
+static PyObject* 
 AstarMatrix_reset(PyObject *dummy, PyObject *args) {
 
 	ssize_t astar_ptr;
@@ -329,6 +392,7 @@ static PyMethodDef libastar_methods[] = {
     {"Matrix_setMat", Matrix_setMat, METH_VARARGS, "Don't use me!!"},
     {"AstarMatrix_new", AstarMatrix_new, METH_VARARGS, "Don't use me!!"},
     {"AstarMatrix_solve", AstarMatrix_solve, METH_VARARGS, "Don't use me!!"},
+    {"AstarMatrix_solve_for_near_states", AstarMatrix_solve_for_near_states, METH_VARARGS, "Don't use me!!"},
     {"AstarMatrix_reset", AstarMatrix_reset, METH_VARARGS, "Don't use me!!"},
     {"AstarMatrix_delete", AstarMatrix_delete, METH_VARARGS, "Don't use me!!"},
     {NULL, NULL, 0, NULL}
