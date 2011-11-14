@@ -15,7 +15,7 @@ class Warrior(singleant.SingleAnt):
         
         super(Warrior, self).__init__(loc, bot, world, "plan_for_hill_state")
         
-        self.goal_pos = None
+        self.goal_hill = None
         self.dispatcher = dispatcher
     
     def plan_for_hill_state(self):
@@ -27,22 +27,30 @@ class Warrior(singleant.SingleAnt):
 
         hills = [(world.distance(self.pos, h),h) for h in bot.enemy_hills]
         if len(hills) == 0:
-            return self.transition("explore_state")
-        
-        self.goal_pos = min(hills)[1]
-        return self.transition("moving_state")
+            self.log.info("No hills, dying")
+            self.pos = (-1,-1)
+            return None
+            
+        self.goal_hill = min(hills)[1]
+        self.log.info("going for hill %s", self.goal_hill)
+        return self.transition("moving_hill_state")
 
-    def moving_state(self):
+    def moving_hill_state(self):
         """
         Move towards an enemy hill    
         """
-        if self.pos == self.goal_pos:
+        r,c = self.goal_hill
+        if self.goal_hill not in self.bot.enemy_hills:
+            self.log.info("My goal hill at %s doesn't exist anymore!",
+                    self.goal_hill)
+            return self.transition("plan_for_hill_state")
+        if self.pos == self.goal_hill:
             self.log.info("Goal reached")
             #chances are this was an enemy hill
             self.bot.enemy_hills.discard(self.pos)
             return self.transition_delayed("plan_for_hill_state")
 
-        if not self.move_to(self.goal_pos):
+        if not self.move_to(self.goal_hill):
             return self.transition("move_random_state")
      
     def move_random_state(self):
@@ -57,22 +65,4 @@ class Warrior(singleant.SingleAnt):
                 break
 
         return self.transition_delayed("plan_for_hill_state")
-
-    def explore_state(self):
-        """
-        Move to the closest unseen location
-        """
-        world = self.world
-        unseen = []
-        for u in self.bot.unseen:
-            d = world.distance(self.pos, u)
-            heapq.heappush(unseen, (d,u))
-        
-        if len(unseen) == 0:
-            #no more hidden locations
-            return self.transition("move_random_state")
-        
-        self.goal = unseen[0][1]
-        return self.transition("moving_state")
-
 
