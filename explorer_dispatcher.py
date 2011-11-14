@@ -35,10 +35,10 @@ class ExplorerDispatcher(object):
         self.ants = []
         self.food_range = 10
         
-        locations = [(r,c) for r in xrange(0,world.rows,self.food_range)
+        self.locations = [(r,c) for r in xrange(0,world.rows,self.food_range)
                                   for c in xrange(0,world.cols,self.food_range)]
         #self.all_locations = locations
-        self.available_locations = locations[:]
+        self.available_locations = self.locations[:]
         
         #logging structure
         self.log = pezz_logging.TurnAdapter(
@@ -48,17 +48,28 @@ class ExplorerDispatcher(object):
                 )
  
         self.log.info("Food range is %d", self.food_range)
+    
+    def spawn_likelyhood(self):
+        """
+        Returns the likelyhood that this spawner will want to create a new
+        ant.
+        """
+        return float(len(self.available_locations)) /  (10+len(self.locations))
+
+
     def create_ant(self, loc):
         """
         Create an Explorer ant if needed.
         Returns the new ant if it has been created, None otherwise    
         """
         if len(self.available_locations) == 0:
-            self.log.info("No more explorers needed")
-            return None
-       
-        i = random.randrange(len(self.available_locations))
-        ant_loc = self.available_locations.pop(i)
+            self.log.info("Explorer to random location")
+            r = random.randrange(0,self.world.rows)
+            c = random.randrange(0,self.world.cols)
+            ant_loc = (r,c)
+        else: 
+            i = random.randrange(len(self.available_locations))
+            ant_loc = self.available_locations.pop(i)
 
         newant = explorer.Explorer(loc, self.bot, self.world, self,
                                   ant_loc, self.food_range)
@@ -77,11 +88,10 @@ class ExplorerDispatcher(object):
         self.ants.remove(ant)
         
         #setting the food as available
-        loc = [k 
-                for k, v in self.food_tracking.iteritems() 
-                if v == ant]
-        if len(loc):
-            del self.food_tracking[loc[0]]
+        for k,v in self.food_tracking.iteritems():
+            if v == ant:
+                del self.food_tracking[k]
+                break
 
         #popping back the ant location
         self.available_locations.append(ant.area_loc)

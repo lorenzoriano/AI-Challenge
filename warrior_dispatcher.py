@@ -3,6 +3,7 @@ import logging
 import pezz_logging
 import random
 import sys
+import math
 
 logger = logging.getLogger("pezzant.warrior_dispatcher")
 loglevel = logging.INFO
@@ -13,7 +14,7 @@ fh.setLevel(loglevel)
 formatter = logging.Formatter(
                 "%(levelname)s "
                 "Turn: %(turn)d "
-                "ExplorerDispatcher - "
+                "WarriorDispatcher - "
                 "%(funcName)s:"
                 "%(lineno)s >> "
                 "%(message)s"
@@ -38,6 +39,19 @@ class WarriorDispatcher(object):
                 self.bot
                 )
     
+    def spawn_likelyhood(self):
+        """
+        Returns the likelyhood that this spawner will want to create a new
+        ant. The more enemy hills are around, the more it will want to spawn
+        a warrior.
+        """
+        logistic = lambda x: 1. / (1+math.exp(-x))
+        n = len(self.bot.enemy_hills)
+        if n == 0:
+            return 0
+        else:
+            return logistic(n)
+
     def create_ant(self, loc):
         """
         Create a Warrior ant if needed.
