@@ -70,6 +70,8 @@ class Explorer(singleant.SingleAnt):
         An ant will run from an enemy unless it's close to its hill or if food
         is closer.
         """
+#        self.log.warning("No fleeing from enemies!")
+#        return False
         world = self.world
         mypos = self.pos
         hills_dist = [world.distance(mypos,loc) for loc in
