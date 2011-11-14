@@ -27,14 +27,24 @@ logger.addHandler(fh)
 ant_ids = 0
 class SingleAnt(object):
     """
-    This is a generic ant.
-    ant = SingleAnt(starting_location, bot, world)
+    This is a generic ant. Every subclass will implement the state
+    machine, i.e. the actual behaviour. The Ant keeps track of the 
+    current state, and manages the movements.
     """
     def __init__(self, pos, bot, world, init_state):
+        """
 
+        Parameters:
+        pos: the (row,col) initial location of the ant.
+        bot: the bot object
+        world: the Ant object
+        init_state: a string representing the initial state. Usually 
+                    provided by a subclass.
+        """
         self.pos = pos
         self.bot = bot
         self.world = world
+        self.mover = bot.mover
         self.plan_cache = {}
         self.plan_cache_age = 0
         self.max_cache_age = 10
@@ -75,33 +85,77 @@ class SingleAnt(object):
         action = getattr(self, self.state)
         action()
        
-    def move_heading(self, direction):
+    def move_immediate_pos(self, loc):
         """
-        Move the ant towards a direction.
-        A direction is in ['n','s','w','e']
+        Move the ant towards to an adjacent square. 
+        Warning: there is no check that loc is adjacent!
         
-        The ant moves if  the destination is unoccupied and no orders 
-        have been isued to go to the same loc.
+        The ant can move if the Mover says so. Note that the final
+        movement will depend on the movements of all the ants. Check
+        the Mover class for details.
 
         Returns True if successfull, False otherwise.
-        Also the bot gets the orders updated.
         """
-        self.log.info("asking to move in direction %s", direction)
 
         world = self.world
-        new_loc = world.destination(self.pos, direction)
-        if (world.unoccupied(new_loc) and new_loc not in self.bot.orders):
-            world.issue_order((self.pos, direction))
-            #update the new position
-            self.pos = new_loc
-            self.bot.orders[new_loc] = self
-            self.log.info("moving to %s", new_loc)
+        if (self.mover.ask_to_move(self, loc)):
             return True
         else:
             self.log.warning("moving to %s not possible. Map is %d", 
-                    new_loc, world.map[new_loc[0]][new_loc[1]])
+                    loc, world.map[loc[0]][loc[1]])
             return False
-   
+ 
+    def move_heading(self, direction):
+        """
+        Expands direction in one location and calls move_immediate_pos.
+        
+        Parameters:
+        direction: one among 'n', 's', 'e', 'w'
+    
+        Return:
+        True is success, False otherwise
+        """
+        loc = self.world.destination(self.pos, direction)
+        return self.move_immediate_pos(loc)
+
+    def movement_failure(self, loc):
+        """
+        The ant can't move to the desired location. There's nothing it
+        can do now, it will not move. Subclasses might take action here
+        (e.g. change state).
+        
+        Parameters:
+        None
+    
+        Return:
+        None
+        """
+        self.log.warning("Moving to %s failed", loc)
+
+    def movement_success(self, loc):
+        """
+        Update the ant location and issue a movement order.
+        """
+        #remove the first element from the plan cache, we are
+        #actiually moving!
+        try:
+            self.plan_cache.values()[0].pop(0)
+        except:
+            pass
+
+        direction = self.world.direction(self.pos, loc)
+        if len(direction) == 0:
+            self.log.error("Empty direction!")
+            self.reset_cache()
+            return 
+
+        direction  = direction[0]
+        
+        #update the new position
+        self.world.issue_order((self.pos, direction))
+        self.log.info("moving to %s in direction %s", loc, direction)
+        self.pos = loc
+
     def reset_cache(self):
         """
         Reset the plans cache and age    
@@ -158,17 +212,10 @@ class SingleAnt(object):
             self.reset_cache()
             return False
         
-        next_loc = path.pop(0)
+        next_loc = path[0]
         self.log.info("Plan succeded, next location is %s", next_loc)
-        direction = self.world.direction(self.pos, next_loc)
        
-        if len(direction) == 0:
-            self.log.error("Empty direction!")
-            self.reset_cache()
-            return False
-
-        direction  = direction[0]
-        res = self.move_heading(direction)
+        res = self.move_immediate_pos(next_loc)
         if res:
             return True
         else:
