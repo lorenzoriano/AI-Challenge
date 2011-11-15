@@ -3,7 +3,7 @@ ants = MyBot.ants
 import singleant
 import random
 #import ants
-
+from aggressive_aggregator import createAggressiveAggregator
 
 
 class Explorer(singleant.SingleAnt):
@@ -179,6 +179,9 @@ class Explorer(singleant.SingleAnt):
         Tries to escape from the closest enemy. Transition to explore if
         no enemy is close anymore
         """
+        #checking if it can turn into an aggregator
+        if createAggressiveAggregator(self, 3, 10):
+            return self.transition("explore_state")
         #checking for enemies
         self.enemies = self.enemies_in_range(self.danger_radius)
         if len(self.enemies) == 0:

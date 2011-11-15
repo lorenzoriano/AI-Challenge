@@ -49,7 +49,8 @@ class SingleAnt(object):
         self.plan_cache_age = 0
         self.max_cache_age = 10
         self.state = init_state
-        
+        self.current_heading = 'n'
+
         global ant_ids
         self.id = ant_ids
         ant_ids += 1
@@ -96,7 +97,15 @@ class SingleAnt(object):
 
         Returns True if successfull, False otherwise.
         """
-
+        
+        direction = self.world.direction(self.pos, loc)
+        if len(direction) == 0:
+            self.log.error("Empty direction!")
+            self.reset_cache()
+            return
+        direction  = direction[0]
+        self.current_heading = direction
+        
         world = self.world
         if (self.mover.ask_to_move(self, loc)):
             return True
@@ -115,6 +124,7 @@ class SingleAnt(object):
         Return:
         True is success, False otherwise
         """
+        self.log.info("moving towards heading %s", direction)
         loc = self.world.destination(self.pos, direction)
         return self.move_immediate_pos(loc)
 
@@ -263,6 +273,7 @@ class SingleAnt(object):
         """
 
         world = self.world
+
         enemies = []
         for e in world.enemy_ants():
             d = world.distance(self.pos, e[0])

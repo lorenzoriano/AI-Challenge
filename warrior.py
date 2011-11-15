@@ -65,4 +65,3 @@ class Warrior(singleant.SingleAnt):
                 break
 
         return self.transition_delayed("plan_for_hill_state")
-

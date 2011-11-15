@@ -107,6 +107,24 @@ class PezzBot:
                 newant = self.explorer_dispatcher.create_ant(loc)
                 self.ants.append(newant)
 
+    def find_ant(self, loc):
+        """
+        Finds an Ant at a specific location.
+        
+        Parameters:
+        loc: a (row,col) tuple
+    
+        Return:
+        The Ant if it is found, None otherwise
+    
+        """
+        if self.world.map[loc[0], loc[1]] != ants.MY_ANT:
+            return None
+        for ant in self.ants:
+            if ant.pos == loc:
+                return ant
+        return None
+
     # do turn is run once per turn
     def do_turn(self, world):
         
@@ -155,8 +173,9 @@ class PezzBot:
         
         self.mover.finalize()
         self.log.info("Time remaining: %f", world.time_remaining())
-        if profiler is not None and self.turn == 150:
+        if profiler is not None and self.turn == 200:
             profiler.dump_stats("profiler.prof")
+            sys.exit()
 
         for h in self.enemy_hills:
             self.log.info("Enemy hill at %s, map shows %d", h, 

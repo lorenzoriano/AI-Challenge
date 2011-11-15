@@ -49,7 +49,6 @@ class Mover(object):
         self.orders.clear()
         self.notmoving = set(a.pos for a in antlist)
 
-        self.log.info("not moving: %s", self.notmoving)
 
     def ask_to_move(self, ant, loc):
         """
