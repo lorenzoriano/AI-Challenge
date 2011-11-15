@@ -14,7 +14,7 @@ def setup(mat):
     #Removing water from neighbours
     intmat[mat == ants.WATER] = -1
     #Increasing the cost of stepping over other ants
-    intmat[mat > 0] = 10
+    #intmat[mat > 0] = 10
 
     #np.savetxt("map.txt", intmat)
 
@@ -37,3 +37,15 @@ def pathfind(start_pos, goal_pos, bot, world):
         return []
     else:
         return path[1:]
+
+def find_near(start_pos, max_cost):
+    """
+    Find all the cells within max_cost distance.
+    Returns a list of the cells, empty if no cell
+    was found. The starting cell will not be included.
+    """
+    cells = astar_m.solve_for_near_states(start_pos, max_cost)
+    if len(cells) == 0:
+        return cells
+    else:
+        return cells[1:]
