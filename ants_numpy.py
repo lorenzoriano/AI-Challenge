@@ -157,6 +157,22 @@ class Ants():
                 del self.hill_list[pos]
         self.hill_list.update(visible_hill_list)
 
+    def wrap_coords(self, loc):
+        r,c = loc
+        if r >= self.rows:
+            r = r - self.rows
+        elif r < 0:
+            r = r + self.rows
+        if c >= self.cols:
+            c = c - self.cols
+        elif c < 0:
+            c = c + self.cols
+        return r,c
+
+    def map_value(self, loc):
+        loc = self.wrap_coords(loc)
+        return self.map[loc[0], loc[1]]
+
     def time_remaining(self):
         return self.turntime - int(1000 * (timingf() - self.turn_start_time))
         #return self.turntime - int(1000 * (time.clock() - self.turn_start_time))
