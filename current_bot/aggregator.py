@@ -1,6 +1,7 @@
 import types
 import random
 import logging
+import pezz_logging
 
 logger = logging.getLogger("pezzant.aggregator")
 loglevel = logging.INFO
@@ -18,6 +19,8 @@ formatter = logging.Formatter(
                 )
 fh.setFormatter(formatter)
 logger.addHandler(fh)
+
+
 def aggr_check_status(self):
     res = self.__class__.check_status(self)
     if not res:
@@ -34,7 +37,7 @@ class Aggregator(object):
     The general class for an aggregator.
     """
     def __init__(self, leader, antlist):
-        """
+        """ 
         leader: the ants on which many computations might be based.
         antlist: a list of ants to add to this aggregator
         """
@@ -49,6 +52,13 @@ class Aggregator(object):
 
         self.bot = leader.bot
         self.last_turn = -1
+         
+        self.log = pezz_logging.TurnAdapter(
+                logger,
+                {"ant": self},
+                self.bot
+                )
+        self.destroyed = False
 
     def __repr__(self):
         return (self.__class__.__name__ +
@@ -103,13 +113,21 @@ class Aggregator(object):
         for ant in self.controlled_ants[:]:
             self.remove_ant(ant)
         self.controlled_ants = []
-    
+        self.destroyed = True
+
     def newturn(self):
         """
         This method gets executed every time a new turn is ongoing.
         Subclasses should ovverride.
         """
         pass
+
+    def check_status(self):
+        """
+        This function has to return True if the aggregator is 
+        still alive, False otherwise
+        """
+        raise NotImplementedError 
 
     def step(self, ant):
         """
@@ -119,6 +137,10 @@ class Aggregator(object):
         A subclass should override but still call this method.
         """
         if self.bot.turn != self.last_turn:
+            #check status is done only once
+            if not self.check_status():
+                self.destroy()
+                return
             self.new_turn()
         self.last_turn = self.bot.turn
 
