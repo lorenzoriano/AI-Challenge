@@ -10,7 +10,7 @@ from fsm import FSM
 logger = logging.getLogger("pezzant.singleant")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
-fh = logging.FileHandler("ant.txt", mode="w")
+fh = logging.FileHandler("bot.txt", mode="w")
 #fh = logging.StreamHandler(sys.stderr)
 fh.setLevel(loglevel)
 formatter = logging.Formatter(

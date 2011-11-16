@@ -6,7 +6,7 @@ logger = logging.getLogger("pezzant.MyBot")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
 #fh = logging.StreamHandler(sys.stderr)
-fh = logging.FileHandler("mover.txt", mode="w")
+fh = logging.FileHandler("bot.txt", mode="a")
 fh.setLevel(loglevel)
 formatter = logging.Formatter(
                 "%(levelname)s "

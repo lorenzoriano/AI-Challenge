@@ -1,6 +1,23 @@
 import types
 import random
+import logging
 
+logger = logging.getLogger("pezzant.aggregator")
+loglevel = logging.INFO
+logger.setLevel(loglevel)
+#fh = logging.StreamHandler(sys.stderr)
+fh = logging.FileHandler("bot.txt", mode="a")
+fh.setLevel(loglevel)
+formatter = logging.Formatter(
+                "%(levelname)s "
+                "Turn: %(turn)d "
+                "%(ant)s - "
+                "%(funcName)s:"
+                "%(lineno)s >> "
+                "%(message)s"
+                )
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 def aggr_check_status(self):
     res = self.__class__.check_status(self)
     if not res:
@@ -17,6 +34,10 @@ class Aggregator(object):
     The general class for an aggregator.
     """
     def __init__(self, leader, antlist):
+        """
+        leader: the ants on which many computations might be based.
+        antlist: a list of ants to add to this aggregator
+        """
         global aggregator_id
         self.id = aggregator_id
         aggregator_id += 1
@@ -25,6 +46,9 @@ class Aggregator(object):
         self.leader = leader
         for ant in antlist:
             self.control(ant)
+
+        self.bot = leader.bot
+        self.last_turn = -1
 
     def __repr__(self):
         return (self.__class__.__name__ +
@@ -80,6 +104,21 @@ class Aggregator(object):
             self.remove_ant(ant)
         self.controlled_ants = []
     
-    def step(self):
-        raise NotImplementedError(
-            "The Aggregator step method must be subclassed")
+    def newturn(self):
+        """
+        This method gets executed every time a new turn is ongoing.
+        Subclasses should ovverride.
+        """
+        pass
+
+    def step(self, ant):
+        """
+        Every time an ant belonging to this aggregator gets its step
+        method called, this method is called instead. This method calls
+        newturn only once every turn.
+        A subclass should override but still call this method.
+        """
+        if self.bot.turn != self.last_turn:
+            self.new_turn()
+        self.last_turn = self.bot.turn
+

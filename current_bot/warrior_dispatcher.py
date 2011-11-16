@@ -8,7 +8,7 @@ import math
 logger = logging.getLogger("pezzant.warrior_dispatcher")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
-fh = logging.FileHandler("warrior_dispatcher.txt", mode="w")
+fh = logging.FileHandler("bot.txt", mode="w")
 #fh = logging.StreamHandler(sys.stderr)
 fh.setLevel(loglevel)
 formatter = logging.Formatter(

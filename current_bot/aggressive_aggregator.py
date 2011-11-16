@@ -6,23 +6,6 @@ import castar
 import logging
 import heapq
 
-logger = logging.getLogger("pezzant.aggressive_aggregator")
-loglevel = logging.INFO
-logger.setLevel(loglevel)
-fh = logging.FileHandler("aggressive_aggregator.txt", mode="w")
-#fh = logging.StreamHandler(sys.stderr)
-fh.setLevel(loglevel)
-formatter = logging.Formatter(
-                "%(levelname)s "
-                "Turn: %(turn)d "
-                "%(ant)s - "
-                "%(funcName)s:"
-                "%(lineno)s >> "
-                "%(message)s"
-                )
-fh.setFormatter(formatter)
-logger.addHandler(fh)
-
 
 class AggressiveAggregator(aggregator.Aggregator):
     """
@@ -33,11 +16,6 @@ class AggressiveAggregator(aggregator.Aggregator):
     def __init__(self, leader, antlist):
         #logging structure
 
-        self.log = pezz_logging.TurnAdapter(
-            logger,
-            {"ant":self},
-            leader.bot
-            )
         super(AggressiveAggregator, self).__init__(leader, antlist)
         self.allocated_slots = set()
         self.leader_moving = False
