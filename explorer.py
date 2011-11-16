@@ -159,7 +159,7 @@ class Explorer(singleant.SingleAnt):
                 self.food = None
                 return self.transition("escape_state")
         
-        if self.world.map[food_loc[0]][food_loc[1]] != ants.FOOD:
+        if self.world.map_value(food_loc) != ants.FOOD:
             self.log.info("No more food at %s", food_loc)
             self.dispatcher.free_food(self.food)
             self.food = None
