@@ -5,6 +5,7 @@ import logging
 import pezz_logging
 import heapq
 import sys
+from fsm import FSM
 
 logger = logging.getLogger("pezzant.singleant")
 loglevel = logging.INFO
@@ -25,7 +26,7 @@ logger.addHandler(fh)
 
 
 ant_ids = 0
-class SingleAnt(object):
+class SingleAnt(FSM):
     """
     This is a generic ant. Every subclass will implement the state
     machine, i.e. the actual behaviour. The Ant keeps track of the 
@@ -41,6 +42,7 @@ class SingleAnt(object):
         init_state: a string representing the initial state. Usually 
                     provided by a subclass.
         """
+        super(SingleAnt, self).__init__(init_state)
         self.pos = pos
         self.bot = bot
         self.world = world
@@ -48,7 +50,6 @@ class SingleAnt(object):
         self.plan_cache = {}
         self.plan_cache_age = 0
         self.max_cache_age = 10
-        self.state = init_state
         self.current_heading = 'n'
 
         global ant_ids
@@ -62,30 +63,6 @@ class SingleAnt(object):
                 self.bot
                 )
     
-    def transition(self, state):
-        """
-        Transition to state and immediate execution    
-        """
-        self.state = state
-        self.log.info("Next state (immediate) %s", self.state)
-        action = getattr(self, state)
-        return action()
-
-    def transition_delayed(self, state):
-        """
-        Transition to state Execution will be the next turn.    
-        """
-        self.state = state
-        self.log.info("Next state (delayed) %s", self.state)
-        return
-
-    def step(self):
-        """
-        Execute the state the FSM is in
-        """
-        action = getattr(self, self.state)
-        action()
-       
     def move_immediate_pos(self, loc):
         """
         Move the ant towards to an adjacent square. 

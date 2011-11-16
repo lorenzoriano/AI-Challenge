@@ -99,7 +99,7 @@ class SingleAnt(object):
             return True
         else:
             self.log.warning("moving to %s not possible. Map is %d", 
-                    new_loc, world.map[new_loc[0]][new_loc[1]])
+                    new_loc, world.map[new_loc[0], new_loc[1]])
             return False
    
     def reset_cache(self):
@@ -180,8 +180,7 @@ class SingleAnt(object):
         """
         Check if an ant exist at this location.
         """
-        row, col = self.pos
-        status = self.world.map[row][col] == ants.MY_ANT
+        status = self.world.map[self.pos[0], self.pos[1]] == ants.MY_ANT
         if not status:
             self.log.info("I am dead or lost!")
             return False

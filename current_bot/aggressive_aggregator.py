@@ -51,10 +51,10 @@ class AggressiveAggregator(aggregator.Aggregator):
         world = ant.world
         rows, cols = world.rows, world.cols
         counter = 0
-        for dpos in (        (-2,0)
-                     (-1,-1),(-1,0),(-1,1), 
-               (0,-2)(0,-1),        (0,1), (0,2),
-                     (1,-1),(1,0),(1,-1),
+        for dpos in (        (-2,0),
+                      (-1,-1),(-1,0),(-1,1), 
+               (0,-2),(0,-1),        (0,1), (0,2),
+                      (1,-1),(1,0),(1,-1),
                             (2,0)
                      ):
 

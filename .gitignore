@@ -2,7 +2,7 @@
 tools/
 lib.linux-x86_64-2.7/
 bot.txt
-oldbot/bot.txt
+oldbot1/
 micropather_1_2_0/
 game_logs/
 .ropeproject/
@@ -16,3 +16,4 @@ game_logs/
 _*
 pezzbot.zip
 !__init__.py
+*.txt
