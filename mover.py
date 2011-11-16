@@ -6,7 +6,7 @@ logger = logging.getLogger("pezzant.MyBot")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
 #fh = logging.StreamHandler(sys.stderr)
-fh = logging.FileHandler("bot.txt", mode="w")
+fh = logging.FileHandler("mover.txt", mode="w")
 fh.setLevel(loglevel)
 formatter = logging.Formatter(
                 "%(levelname)s "
@@ -25,12 +25,16 @@ class Mover(object):
         self.world = world
         self.orders = {}
         self.notmoving = set()
+        self.depends_on = {}
+        self.moving = set()
+        self.all_ants = set()
         #logging structure
         self.log = pezz_logging.TurnAdapter(
                 logger,
                 {"ant":"Mover"},
                 bot
                 )
+        self.pos_mapping = {}
  
 
     def update(self, antlist):
@@ -47,8 +51,14 @@ class Mover(object):
         None    
         """
         self.orders.clear()
-        self.notmoving = set(a.pos for a in antlist)
-
+        self.notmoving.clear()
+        self.moving .clear()
+        self.pos_mapping.clear()
+        self.all_ants.clear()
+        for a in antlist:
+            self.notmoving.add(a.pos)
+            self.pos_mapping[a.pos] = a
+            self.all_ants.add(a.pos)
 
     def ask_to_move(self, ant, loc):
         """
@@ -63,15 +73,81 @@ class Mover(object):
         Return:
         True on success, False otherwise
         """
-        if self.world.map[loc[0], loc[1]] != ants.WATER: 
-            if not self.orders.has_key(loc):
-                self.orders[loc] = ant
+        if self.world.map_value(loc) != ants.WATER: 
+            if not loc in self.orders.values():
+                self.orders[ant] = loc
                 self.notmoving.remove(ant.pos)
+                self.moving.add(ant.pos)
+                self.depends_on[ant.pos] = loc
                 return True
 
         return False
 
+    def solve_dependency(self, elem, poses):
+        """
+        Starting with an element, calculate the chain of dependencies and
+        valuates if the ants can move or not. If one ant in the chain is 
+        not moving or if the chain is circular, then the whold chain of ants
+        cannot move.
+
+        To call: solve_dependency( (row,col), [(row,col)])
+
+        Parameters:
+        elem: (row,col)
+        pos_list: a set. This is a return parameter too
+
+        Return:
+        True if the ants can move, False otherwise. The set poses will also
+        contain the result of the computation.
+        """
+        tail = self.depends_on[elem]
+        if tail in poses:
+            #the chain is circular
+            self.log.info("The chain %s is circular, tail: %s", poses, tail)
+            return True
+        #if tail is not an ant, then the chain is free
+        if tail not in self.all_ants:
+            return True
+        poses.add(tail)
+        if tail in self.notmoving:
+            #the chain depends on a not moving ant, so it won't work
+            self.log.info("the chain %s depends on non-moving ant %s", poses, tail)
+            return False
+        return self.solve_dependency(tail, poses)
+
     def finalize(self):
+        """
+        Issue all the movements that do not conflict
+        
+        Parameters:
+        None
+    
+        Return:
+        None
+        """
+        while len(self.moving) > 0:
+            elem = self.moving.pop()
+            chain = set((elem,))
+            ret = self.solve_dependency(elem, chain)
+            if ret:
+                self.log.info("The chain %s moves!", chain)
+                for pos in chain:
+                    ant = self.pos_mapping[pos]
+                    ant.movement_success(self.orders[ant])
+                self.moving.difference_update(chain)
+                self.notmoving.difference_update(chain)
+            else:
+                self.log.warning("The chain %s does not move!", chain)
+                for pos in chain:
+                    ant = self.pos_mapping[pos]
+                    try:
+                        ant.movement_failure(self.orders[ant])
+                    except KeyError:
+                        pass
+                self.moving.difference_update(chain)
+                self.notmoving.update(chain)
+        
+    def __finalize(self):
         """
         Issue all the movements that do not conflict
         
