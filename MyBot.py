@@ -118,7 +118,7 @@ class PezzBot:
         The Ant if it is found, None otherwise
     
         """
-        if self.world.map[loc[0], loc[1]] != ants.MY_ANT:
+        if self.world.map_value(loc) != ants.MY_ANT:
             return None
         for ant in self.ants:
             if ant.pos == loc:
@@ -143,14 +143,19 @@ class PezzBot:
                     self.log.info("Removing hill at %s", hill)
                     self.enemy_hills.remove(hill)
 
-
-        #enemy hills are removed by the warriors
-        
         #removing visible locations
         for loc in self.unseen.copy():
             if world.visible[loc[0], loc[1]]:
                 self.unseen.discard(loc)
 
+        #removing dead_ants
+        for ant in self.ants[:]:
+            if not ant.check_status():
+                self.ants.remove(ant)
+                for d in self.dispatchers:
+                    d.remove_ant(ant)
+
+        #adding newborn ants
         self.update_ants()
 
         #now is time to update the mover
@@ -159,12 +164,7 @@ class PezzBot:
         iter_ants = self.ants[:]
         random.shuffle(iter_ants)
         for ant_number, ant in enumerate(iter_ants):
-            if not ant.check_status():
-                self.ants.remove(ant)
-                for d in self.dispatchers:
-                    d.remove_ant(ant)
-            else:
-                ant.step()
+            ant.step()
 
             #avg_time = self.time_tracker.tock()
             if world.time_remaining() < 50:
@@ -177,9 +177,13 @@ class PezzBot:
             profiler.dump_stats("profiler.prof")
             sys.exit()
 
+        self.log.info("number of enemy hills: %d", len(self.enemy_hills))
         for h in self.enemy_hills:
             self.log.info("Enemy hill at %s, map shows %d", h, 
-                    world.map[h[0],h[1]])
+                    world.map_value(h))
+        self.log.info("number of explorer: %d", len(self.explorer_dispatcher.ants))
+        self.log.info("number of warrior: %d", len(self.warrior_dispatcher.ants))
+
 
 def main():
     try:
