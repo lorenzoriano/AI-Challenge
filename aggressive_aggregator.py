@@ -2,12 +2,14 @@ import castar
 import aggregator
 import pezz_logging
 from MyBot import ants
-
+import castar
 import logging
+import heapq
+
 logger = logging.getLogger("pezzant.aggressive_aggregator")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
-fh = logging.FileHandler("bot.txt", mode="w")
+fh = logging.FileHandler("aggressive_aggregator.txt", mode="w")
 #fh = logging.StreamHandler(sys.stderr)
 fh.setLevel(loglevel)
 formatter = logging.Formatter(
@@ -37,32 +39,29 @@ class AggressiveAggregator(aggregator.Aggregator):
             leader.bot
             )
         super(AggressiveAggregator, self).__init__(leader, antlist)
+        self.allocated_slots = set()
+        self.leader_moving = False
 
     def number_friendly_ants(self, ant):
         """
-        Returns the number of friendly ants around ant.
+        Returns the number of friendly ants around ant (8-neighbour).
         """
         pos_r = self.leader.pos[0]
         pos_c = self.leader.pos[1]
-        map = ant.world.map
-        rows, cols = map.shape
+        world = ant.world
+        rows, cols = world.rows, world.cols
         counter = 0
-        for dpos in ((0,0),(0,1),(0,-1), 
-                     (1,0),(1,1),(1,-1),
-                     (-1,0),(-1,-1),(-1,-1)):
+        for dpos in (        (-2,0)
+                     (-1,-1),(-1,0),(-1,1), 
+               (0,-2)(0,-1),        (0,1), (0,2),
+                     (1,-1),(1,0),(1,-1),
+                            (2,0)
+                     ):
 
             newloc_r = pos_r + dpos[0]
-            if newloc_r >= rows:
-                newloc_r = newloc_r - rows
-            if newloc_r < 0:
-                newloc_r = newloc_r + rows
             newloc_c =  pos_c + dpos[1]
-            if newloc_c >= cols:
-                newloc_c = newloc_c - cols
-            if newloc_c < 0:
-                newloc_c = newloc_c + cols
             
-            if map[newloc_r, newloc_c] == ants.MY_ANT:
+            if world.map_value((newloc_r, newloc_c)) == ants.MY_ANT:
                 counter += 1
         return counter
 
@@ -71,39 +70,63 @@ class AggressiveAggregator(aggregator.Aggregator):
         The leader moves towards an enemy, the other ants try to
         move close to the leader
         """
-        self.log.info("Step for ant %s", ant)
+        
         if ant == self.leader:
+            self.log.info("Step for leader %s", ant)
             #only the leader checks for destroy
             r = 1.5 * ant.world.attackradius2
             enemies_list = ant.enemies_in_range(r)
             if self.check_if_destroy(enemies_list):
                 self.destroy()
                 return
-            if self.number_friendly_ants(ant) < 2:
+            if self.number_friendly_ants(ant) < 3:
                 self.log.info("Too few ants around the leader, waiting")
+                self.leader_moving = False
                 return
             loc = enemies_list[0][1]
             self.log.info("Moving leader towards enemy at %s", loc)
             ant.move_to(loc)
+            self.leader_moving = True
+            self.allocated_slots.clear()
+
         else:
-            target_r = self.leader.pos[0]
-            target_c = self.leader.pos[1]
+            self.log.info("Step for slave %s", ant)
             d = ant.world.distance(ant.pos, self.leader.pos)
-            if d == 1:
+            if d <= 2:
                 self.log.info(
-                        "Ant %s will move in the same direction as the leader",
+                        "Slave %s will move in the same direction as the leader",
                         ant)
-                ant.move_heading(self.leader.current_heading)
+                if self.leader_moving:
+                    ant.move_heading(self.leader.current_heading)
+                else:
+                    self.log.info("Unfortunately for slave %s the leader is not moving", 
+                                  ant)
                 return
             
-            for dpos in ((0,0),(0,1),(0,-1), 
+            #finding an empty slot around the leader
+            slots = ([l for l in ((0,0),(0,1),(0,-1), 
                          (1,0),(1,1),(1,-1),
-                         (-1,0),(-1,-1),(-1,-1)):
-               newloc = (target_r + dpos[0],
-                         target_c + dpos[1])
-               if ant.move_to(newloc):
-                   break
-            self.log.info("Moving ant %s to %s", ant, newloc)
+                         (-1,0),(-1,-1),(-1,-1))
+                       if l not in self.allocated_slots])
+            if len(slots) == 0:
+                self.log.info("no slots for slave %s, moving towards the leader", ant)
+                ant.move_to(self.leader.pos)
+                return
+            candidates = []
+            for dpos in slots:
+                newloc = (self.leader.pos[0]+ dpos[0],
+                         self.leader.pos[0] + dpos[1])
+                heapq.heappush(candidates, (len(castar.pathfind(ant.pos, newloc)),
+                                           newloc, dpos)
+                              )
+            self.log.info("Candidates for slave %s are %s", ant, candidates)
+            for loc in candidates:
+                target = loc[1]
+                dpos = loc[2]
+                if ant.move_to(target):
+                    self.log.info("Moving ant %s to %s", ant, target)
+                    self.allocated_slots.add(dpos)
+                    break
             
     def check_if_destroy(self, enemies_list):
         """
