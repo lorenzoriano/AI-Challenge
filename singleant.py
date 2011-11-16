@@ -9,7 +9,7 @@ import sys
 logger = logging.getLogger("pezzant.singleant")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
-fh = logging.FileHandler("bot.txt", mode="w")
+fh = logging.FileHandler("ant.txt", mode="w")
 #fh = logging.StreamHandler(sys.stderr)
 fh.setLevel(loglevel)
 formatter = logging.Formatter(
@@ -111,7 +111,7 @@ class SingleAnt(object):
             return True
         else:
             self.log.warning("moving to %s not possible. Map is %d", 
-                    loc, world.map[loc[0]][loc[1]])
+                    loc, world.map_value(loc))
             return False
  
     def move_heading(self, direction):
@@ -148,10 +148,6 @@ class SingleAnt(object):
         """
         #remove the first element from the plan cache, we are
         #actiually moving!
-        try:
-            self.plan_cache.values()[0].pop(0)
-        except:
-            pass
 
         direction = self.world.direction(self.pos, loc)
         if len(direction) == 0:
@@ -170,18 +166,22 @@ class SingleAnt(object):
         """
         Reset the plans cache and age    
         """
-        self.plan_cache = {}
+        self.plan_cache.clear()
         self.plan_cache_age = 0
 
-    def plan_to(self, loc):
+    def __plan_to(self, loc):
         """
         Plans a path to loc. If a plan had already been found, use it.  
         Otherwise plan using astar. Returns the plan or an
         empty list if no plan was found.    
         """
+        if loc is None:
+            self.log.warning("attempting to move to None!")
+            self.reset_cache()
+            return []
+        
         if loc == self.pos:
             self.log.info("goal %s is my location!", loc)
-            self.reset_cache()
             return []
 
         if self.plan_cache_age > self.max_cache_age:
@@ -189,25 +189,25 @@ class SingleAnt(object):
             self.reset_cache()
 
         if loc in self.plan_cache:
-            self.log.info("location %s already in cache", loc)
-            self.plan_cache_age += 1
-            return self.plan_cache[loc]
+            plan = self.plan_cache[loc]
+            try:
+                #checking if my pos is in the cache
+                i = plan.index(self.pos)
+            except ValueError:
+                i = -1;
+            if i < 0:
+                self.log.info("My pos is not in the plan %s", plan)
+            else:
+                self.log.info("location %s already in cache", loc)
+                self.plan_cache_age += 1
+                #return the path from the next position on
+                return plan[i+1:]
 
         #no plan in the cache, running A*
         self.log.info("planning to %s", loc)
-        if loc is None:
-            self.log.warning("attempting to move to None!")
-            self.reset_cache()
-            return []
-
-        #wrapping with the world
-        row, col = loc
-        row = row % self.world.rows
-        col = col % self.world.cols        
-        loc = (row, col)
 
         path = castar.pathfind(self.pos, loc, self.bot, self.world)
-        self.plan_cache = {loc:path}
+        self.plan_cache[loc] = path
         self.plan_cache_age = 0
         return path
 
@@ -216,10 +216,10 @@ class SingleAnt(object):
         Move the ant to loc. Uses self.plan_to to find a path.
         Returns True if successfull, False otherwise    
         """
-        path = self.plan_to(loc)
+        loc = self.world.wrap_coords(loc)
+        path = self.__plan_to(loc)
         if len(path) == 0:
             self.log.info("There is no path!")
-            self.reset_cache()
             return False
         
         next_loc = path[0]
@@ -229,7 +229,7 @@ class SingleAnt(object):
         if res:
             return True
         else:
-            #something went wrong when moving
+            #something went wrong when moving, probably the plan is wrong!
             self.reset_cache()
             return False
     
@@ -237,8 +237,7 @@ class SingleAnt(object):
         """
         Check if an ant exist at this location.
         """
-        row, col = self.pos
-        status = self.world.map[row][col] == ants.MY_ANT
+        status = self.world.map_value(self.pos) == ants.MY_ANT
         if not status:
             self.log.info("I am dead or lost!")
             return False
