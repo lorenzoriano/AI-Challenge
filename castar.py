@@ -14,7 +14,7 @@ def setup(mat):
     #Removing water from neighbours
     intmat[mat == ants.WATER] = -1
     #Increasing the cost of stepping over other ants
-    #intmat[mat > 0] = 10
+    intmat[mat == ants.ANTS] = 4 #the cost of going around is smaller
 
     #np.savetxt("map.txt", intmat)
 
@@ -26,7 +26,7 @@ def setup(mat):
     else:
         astar_m.reset()
 
-def pathfind(start_pos, goal_pos, bot, world):
+def pathfind(start_pos, goal_pos, bot = None, world = None):
     """
     Plan a path from start_pos to goal_pos.
 
