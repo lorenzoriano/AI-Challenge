@@ -103,7 +103,7 @@ class Mover(object):
         tail = self.depends_on[elem]
         if tail in poses:
             #the chain is circular
-            self.log.info("The chain %s is circular, tail: %s", poses, tail)
+            #self.log.info("The chain %s is circular, tail: %s", poses, tail)
             return True
         #if tail is not an ant, then the chain is free
         if tail not in self.all_ants:
@@ -111,7 +111,7 @@ class Mover(object):
         poses.add(tail)
         if tail in self.notmoving:
             #the chain depends on a not moving ant, so it won't work
-            self.log.info("the chain %s depends on non-moving ant %s", poses, tail)
+            #self.log.info("the chain %s depends on non-moving ant %s", poses, tail)
             return False
         return self.solve_dependency(tail, poses)
 
@@ -130,14 +130,14 @@ class Mover(object):
             chain = set((elem,))
             ret = self.solve_dependency(elem, chain)
             if ret:
-                self.log.info("The chain %s moves!", chain)
+                #self.log.info("The chain %s moves!", chain)
                 for pos in chain:
                     ant = self.pos_mapping[pos]
                     ant.movement_success(self.orders[ant])
                 self.moving.difference_update(chain)
                 self.notmoving.difference_update(chain)
             else:
-                self.log.warning("The chain %s does not move!", chain)
+                #self.log.warning("The chain %s does not move!", chain)
                 for pos in chain:
                     ant = self.pos_mapping[pos]
                     try:
