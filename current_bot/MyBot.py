@@ -17,7 +17,6 @@ import time
 import sys
 import random
 import cProfile
-import signal
 
 logger = logging.getLogger("pezzant.MyBot")
 loglevel = logging.INFO
@@ -72,7 +71,9 @@ class PezzBot:
         self.unseen = set( (r,c) for r in xrange(world.rows)
                                  for c in xrange(world.cols)
                          )
-        self.time_tracker = TimeTracker(0)
+        self.ants_tracker = TimeTracker(0)
+        self.preloop_tracker = TimeTracker(0)
+        self.postloop_tracker = TimeTracker(0)
         castar.setup(world.map)
 
     def iterate_ants_loc(self):
@@ -127,7 +128,7 @@ class PezzBot:
 
     # do turn is run once per turn
     def do_turn(self, world):
-        
+        self.preloop_tracker.tick()
         self.log.info("----------")
         self.log.info("Start turn")
         castar.setup(world.map)
@@ -163,14 +164,18 @@ class PezzBot:
 
         iter_ants = self.ants[:]
         random.shuffle(iter_ants)
+        preloop_time = self.preloop_tracker.tock()
+        ants_time = 0.
         for ant_number, ant in enumerate(iter_ants):
+            self.ants_tracker.tick()
             ant.step()
+            ants_time += self.ants_tracker.tock()
 
-            #avg_time = self.time_tracker.tock()
             if world.time_remaining() < 50:
                 self.log.warning("Timeout incoming, bail out!")
                 break
         
+        self.postloop_tracker.tick()
         self.mover.finalize()
         self.log.info("Time remaining: %f", world.time_remaining())
         if profiler is not None and self.turn == 200:
@@ -183,7 +188,12 @@ class PezzBot:
                     world.map_value(h))
         self.log.info("number of explorer: %d", len(self.explorer_dispatcher.ants))
         self.log.info("number of warrior: %d", len(self.warrior_dispatcher.ants))
+        postloop_time = self.postloop_tracker.tock()
+        self.ants_tracker.reset()
 
+        self.log.info("Preloop average time: %f", preloop_time)
+        self.log.info("Ants average time: %f", ants_time)
+        self.log.info("Postloop average time: %f", postloop_time)
 
 def main():
     try:
