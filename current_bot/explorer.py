@@ -3,7 +3,7 @@ ants = MyBot.ants
 import singleant
 import random
 #import ants
-from aggressive_aggregator import createAggressiveAggregator
+import explorers_flock 
 
 
 class Explorer(singleant.SingleAnt):
@@ -24,6 +24,8 @@ class Explorer(singleant.SingleAnt):
         self.area_loc = area_loc
         self.food_gather_range = food_range
         self.map = world.map
+        self.food = None
+        self.enemies = None
 
     def generate_random_goal(self):
         """
@@ -74,15 +76,6 @@ class Explorer(singleant.SingleAnt):
 #        return False
         world = self.world
         mypos = self.pos
-        hills_dist = [world.distance(mypos,loc) for loc in
-                world.my_hills()]
-        
-        if len(hills_dist) == 0:
-            self.log.warning("I fear my hill is gone!")
-            return True
-        if min(hills_dist) < 20:
-            return False
-        
         if food_loc is None:
             return True
         if world.distance(mypos, food_loc) < world.distance(mypos,enemy_loc):
@@ -180,7 +173,7 @@ class Explorer(singleant.SingleAnt):
         no enemy is close anymore
         """
         #checking if it can turn into an aggregator
-        if createAggressiveAggregator(self, 3, 10):
+        if explorers_flock.create(self, 3, 10):
             return self.transition("explore_state")
         #checking for enemies
         self.enemies = self.enemies_in_range(self.danger_radius)
