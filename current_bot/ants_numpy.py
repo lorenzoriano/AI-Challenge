@@ -7,7 +7,8 @@ from collections import defaultdict
 from math import sqrt
 import numpy as np
 
-timingf = time.clock
+timingf = time.time
+#timingf = time.clock
 
 MY_ANT = 0
 ANTS = 0
