@@ -41,6 +41,13 @@ class Aggregator(object):
         leader: the ants on which many computations might be based.
         antlist: a list of ants to add to this aggregator
         """
+        self.bot = leader.bot
+        self.log = pezz_logging.TurnAdapter(
+                logger,
+                {"ant": self},
+                self.bot
+                )
+        
         global aggregator_id
         self.id = aggregator_id
         aggregator_id += 1
@@ -50,14 +57,9 @@ class Aggregator(object):
         for ant in antlist:
             self.control(ant)
 
-        self.bot = leader.bot
         self.last_turn = -1
          
-        self.log = pezz_logging.TurnAdapter(
-                logger,
-                {"ant": self},
-                self.bot
-                )
+        
         self.destroyed = False
 
     def __repr__(self):
@@ -120,7 +122,7 @@ class Aggregator(object):
         This method gets executed every time a new turn is ongoing.
         Subclasses should ovverride.
         """
-        pass
+        raise NotImplementedError 
 
     def check_status(self):
         """
@@ -140,7 +142,9 @@ class Aggregator(object):
             #check status is done only once
             if not self.check_status():
                 self.destroy()
+                #but first execute the restored ant step method
+                ant.step()
                 return
-            self.new_turn()
+            self.newturn()
         self.last_turn = self.bot.turn
 
