@@ -30,6 +30,8 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         self.attacking_step = 0
         self.attack_pos = None
         self.grouping = 0
+        self.previous_poses = None
+        self.current_poses = None
 
     def step(self, ant):
         """
@@ -46,8 +48,9 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         Calculates the centroid and grouping of all the ants. This function
         also controls the transitions of the FSM
         """
-        poses = [ant.pos for ant in self.controlled_ants]
-        arr = np.array(poses)
+        self.previous_poses = self.current_poses
+        self.current_poses = [ant.pos for ant in self.controlled_ants]
+        arr = np.array(self.current_poses)
         m = np.mean(arr,0)
         self.centroid = (int(round(m[0])),
                          int(round(m[1]))
@@ -59,7 +62,7 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         self.log.info("Grouping value of %f", self.grouping)
 
         #the steps are calculated once per turn
-        self.grouping_step += 1
+        #self.grouping_step += 1
         self.attacking_step += 1
 
     def check_status(self):
@@ -95,9 +98,13 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
 
         """
         self.attacking_step = 0
-        if self.grouping_step > self.max_grouping_steps:
-            self.log.info("After speing %d turns in grouping, time to attack",
-                        self.grouping_step)
+        #if self.grouping_step > self.max_grouping_steps:
+        #    self.log.info("After speing %d turns in grouping, time to attack",
+        #                self.grouping_step)
+        #    return self.transition("attack")
+        
+        if self.previous_poses == self.current_poses:
+            self.log.info("Ants didn't move, stepping out of grouping")
             return self.transition("attack")
         
         if self.grouping <= self.clustering_std:
