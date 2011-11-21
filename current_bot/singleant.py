@@ -8,21 +8,21 @@ import sys
 from fsm import FSM
 
 logger = logging.getLogger("pezzant.singleant")
-loglevel = logging.INFO
-logger.setLevel(loglevel)
-fh = logging.FileHandler("bot.txt", mode="w")
+#loglevel = logging.INFO
+#logger.setLevel(loglevel)
+#fh = logging.FileHandler("bot.txt", mode="w")
 #fh = logging.StreamHandler(sys.stderr)
-fh.setLevel(loglevel)
-formatter = logging.Formatter(
-                "%(levelname)s "
-                "Turn: %(turn)d "
-                "%(ant)s - "
-                "%(funcName)s:"
-                "%(lineno)s >> "
-                "%(message)s"
-                )
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+#fh.setLevel(loglevel)
+#formatter = logging.Formatter(
+#                "%(levelname)s "
+#                "Turn: %(turn)d "
+#                "%(ant)s - "
+#                "%(funcName)s:"
+#                "%(lineno)s >> "
+#                "%(message)s"
+#                )
+#fh.setFormatter(formatter)
+#logger.addHandler(fh)
 
 
 ant_ids = 0
@@ -128,7 +128,7 @@ class SingleAnt(FSM):
 
         direction = self.world.direction(self.pos, loc)
         if len(direction) == 0:
-            self.log.error("Empty direction!")
+            self.log.error("Empty direction when going to %s", loc)
             self.reset_cache()
             return 
 
@@ -257,3 +257,18 @@ class SingleAnt(FSM):
                 heapq.heappush(enemies,(d,e[0]) )
 
         return enemies
+    
+    def unseen_locations(self):
+        """
+        Returns an ordered list of (dist, location) of all the enemy 
+        locations whose distance is <= r
+        """
+
+        world = self.world
+
+        unseen_locs = []
+        for loc in self.bot.unseen:
+            d = world.distance(self.pos, loc)
+            heapq.heappush(unseen_locs,(d,loc) )
+
+        return unseen_locs
