@@ -18,7 +18,7 @@ import sys
 import random
 import cProfile
 
-logger = logging.getLogger("pezzant.MyBot")
+logger = logging.getLogger("pezzant")
 loglevel = logging.INFO
 logger.setLevel(loglevel)
 #fh = logging.StreamHandler(sys.stderr)
@@ -177,7 +177,6 @@ class PezzBot:
         
         self.postloop_tracker.tick()
         self.mover.finalize()
-        self.log.info("Time remaining: %f", world.time_remaining())
         if profiler is not None and self.turn == 200:
             profiler.dump_stats("profiler.prof")
             sys.exit()
@@ -189,11 +188,15 @@ class PezzBot:
         self.log.info("number of explorer: %d", len(self.explorer_dispatcher.ants))
         self.log.info("number of warrior: %d", len(self.warrior_dispatcher.ants))
         postloop_time = self.postloop_tracker.tock()
+        
         self.ants_tracker.reset()
+        self.preloop_tracker.reset()
+        self.postloop_tracker.reset()
 
         self.log.info("Preloop average time: %f", preloop_time)
         self.log.info("Ants average time: %f", ants_time)
         self.log.info("Postloop average time: %f", postloop_time)
+        self.log.info("Time remaining: %f", world.time_remaining())
 
 def main():
     try:
