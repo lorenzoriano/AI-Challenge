@@ -7,11 +7,10 @@ import castar
 class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
     """
     An Aggregator that tries first to cluster the belonging
-    ants, then move them towards the closes enemy.
+    ants, then move them towards the closest enemy.
     """
 
     clustering_std = 1.0
-    max_grouping_steps = 5
     min_attacking_steps = 5
 
     def __init__(self, leader, antlist):
@@ -131,7 +130,7 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
 
 def create(calling_ant, neighbour_size, neighbour_dist):
     """
-    Create a new AggressiveAggregator if the number of friendly ants
+    Create a new ExplorerFlock if the number of friendly ants
     whose distance (calculated using the A*) is closer than neighbour_dist.
 
     Parameters:
