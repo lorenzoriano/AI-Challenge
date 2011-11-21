@@ -3,21 +3,21 @@ import logging
 import pezz_logging
 
 logger = logging.getLogger("pezzant.MyBot")
-loglevel = logging.INFO
-logger.setLevel(loglevel)
-#fh = logging.StreamHandler(sys.stderr)
-fh = logging.FileHandler("bot.txt", mode="a")
-fh.setLevel(loglevel)
-formatter = logging.Formatter(
-                "%(levelname)s "
-                "Turn: %(turn)d "
-                "%(ant)s - "
-                "%(funcName)s:"
-                "%(lineno)s >> "
-                "%(message)s"
-                )
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+#loglevel = logging.INFO
+#logger.setLevel(loglevel)
+##fh = logging.StreamHandler(sys.stderr)
+#fh = logging.FileHandler("bot.txt", mode="a")
+#fh.setLevel(loglevel)
+#formatter = logging.Formatter(
+                #"%(levelname)s "
+                #"Turn: %(turn)d "
+                #"%(ant)s - "
+                #"%(funcName)s:"
+                #"%(lineno)s >> "
+                #"%(message)s"
+                #)
+#fh.setFormatter(formatter)
+#logger.addHandler(fh)
 
 
 class Mover(object):
