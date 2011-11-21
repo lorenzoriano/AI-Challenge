@@ -6,6 +6,7 @@ import time
 from collections import defaultdict
 from math import sqrt
 import numpy as np
+np.seterr(divide='raise')
 
 timingf = time.time
 #timingf = time.clock
