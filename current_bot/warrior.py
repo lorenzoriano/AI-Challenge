@@ -2,18 +2,19 @@ import MyBot
 ants = MyBot.ants
 import singleant
 import random
-import heapq
+import warriors_flock
 
 class Warrior(singleant.SingleAnt):
     """
     The Warrior ant.
 
-    It will seek out enemy hills
+    It will seek out enemy hills. This ant is usually controlled by a 
+    WarriorsFlock
     """
     def __init__(self, loc, bot, world, dispatcher,
                 ):
         
-        super(Warrior, self).__init__(loc, bot, world, "plan_for_hill_state")
+        super(Warrior, self).__init__(loc, bot, world, "move_random_state")
         
         self.goal_hill = None
         self.dispatcher = dispatcher
@@ -22,6 +23,9 @@ class Warrior(singleant.SingleAnt):
         """
         Plans for the closest hill, or random movement if no hill in sight
         """
+        #if random.random() < 0.3:
+        #    warriors_flock.create(self, 15)
+
         world = self.world
         bot = self.bot
 
@@ -39,6 +43,9 @@ class Warrior(singleant.SingleAnt):
         """
         Move towards an enemy hill    
         """
+        #if random.random() < 0.3:
+        #    warriors_flock.create(self, 15)
+        
         r,c = self.goal_hill
         if self.goal_hill not in self.bot.enemy_hills:
             self.log.info("My goal hill at %s doesn't exist anymore!",
@@ -55,8 +62,10 @@ class Warrior(singleant.SingleAnt):
      
     def move_random_state(self):
         """
-        Move to a random direction, then transition to explore.
+        Move to a random direction.
         """
+        if warriors_flock.create(self, 10):
+            return
         directions = ['n','s','w','e']
         random.shuffle(directions)
 
@@ -64,4 +73,4 @@ class Warrior(singleant.SingleAnt):
             if self.move_heading(d):
                 break
 
-        return self.transition_delayed("plan_for_hill_state")
+        #return self.transition_delayed("plan_for_hill_state")
