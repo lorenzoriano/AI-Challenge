@@ -4,21 +4,21 @@ import logging
 import pezz_logging
 
 logger = logging.getLogger("pezzant.aggregator")
-loglevel = logging.INFO
-logger.setLevel(loglevel)
-#fh = logging.StreamHandler(sys.stderr)
-fh = logging.FileHandler("bot.txt", mode="a")
-fh.setLevel(loglevel)
-formatter = logging.Formatter(
-                "%(levelname)s "
-                "Turn: %(turn)d "
-                "%(ant)s - "
-                "%(funcName)s:"
-                "%(lineno)s >> "
-                "%(message)s"
-                )
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+#loglevel = logging.INFO
+#logger.setLevel(loglevel)
+##fh = logging.StreamHandler(sys.stderr)
+#fh = logging.FileHandler("bot.txt", mode="a")
+#fh.setLevel(loglevel)
+#formatter = logging.Formatter(
+                #"%(levelname)s "
+                #"Turn: %(turn)d "
+                #"%(ant)s - "
+                #"%(funcName)s:"
+                #"%(lineno)s >> "
+                #"%(message)s"
+                #)
+#fh.setFormatter(formatter)
+#logger.addHandler(fh)
 
 
 def aggr_check_status(self):
@@ -52,14 +52,12 @@ class Aggregator(object):
         self.id = aggregator_id
         aggregator_id += 1
         
-        self.controlled_ants = [] 
+        self.controlled_ants = set() 
         self.leader = leader
         for ant in antlist:
             self.control(ant)
 
         self.last_turn = -1
-         
-        
         self.destroyed = False
 
     def __repr__(self):
@@ -81,7 +79,7 @@ class Aggregator(object):
         ant.check_status = types.MethodType(aggr_check_status, ant,
                 ant.__class__)
         ant.aggregator = self
-        self.controlled_ants.append(ant)
+        self.controlled_ants.add(ant)
 
     def remove_ant(self, ant):
         """
@@ -101,7 +99,7 @@ class Aggregator(object):
         if len(self.controlled_ants) == 0:
             return
         if ant == self.leader:
-            self.leader = random.choice(self.controlled_ants)
+            self.leader = random.choice(list(self.controlled_ants))
             self.log.info("Selecting the new leader %s", self.leader)
 
     def destroy(self):
@@ -112,9 +110,10 @@ class Aggregator(object):
         All the ants will get their set method restored.
         """
         self.log.info("getting destroyed")
-        for ant in self.controlled_ants[:]:
+        self.log.info("my controlled ants are: %s", self.controlled_ants)
+        for ant in self.controlled_ants.copy():
             self.remove_ant(ant)
-        self.controlled_ants = []
+        self.controlled_ants.clear()
         self.destroyed = True
 
     def newturn(self):
@@ -138,6 +137,11 @@ class Aggregator(object):
         newturn only once every turn.
         A subclass should override but still call this method.
         """
+        #removing ants that do not belong to me
+        if hasattr(ant, "aggregator"):
+            if ant.aggregator != self:
+                self.log.info("Ant %s does not belong to me anymore", ant)
+                self.controlled_ants.discard(ant)
         if self.bot.turn != self.last_turn:
             #check status is done only once
             if not self.check_status():
