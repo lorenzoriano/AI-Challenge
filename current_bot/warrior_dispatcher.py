@@ -6,21 +6,21 @@ import sys
 import math
 
 logger = logging.getLogger("pezzant.warrior_dispatcher")
-loglevel = logging.INFO
-logger.setLevel(loglevel)
-fh = logging.FileHandler("bot.txt", mode="w")
-#fh = logging.StreamHandler(sys.stderr)
-fh.setLevel(loglevel)
-formatter = logging.Formatter(
-                "%(levelname)s "
-                "Turn: %(turn)d "
-                "WarriorDispatcher - "
-                "%(funcName)s:"
-                "%(lineno)s >> "
-                "%(message)s"
-                )
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+#loglevel = logging.INFO
+#logger.setLevel(loglevel)
+#fh = logging.FileHandler("bot.txt", mode="w")
+##fh = logging.StreamHandler(sys.stderr)
+#fh.setLevel(loglevel)
+#formatter = logging.Formatter(
+                #"%(levelname)s "
+                #"Turn: %(turn)d "
+                #"WarriorDispatcher - "
+                #"%(funcName)s:"
+                #"%(lineno)s >> "
+                #"%(message)s"
+                #)
+#fh.setFormatter(formatter)
+#logger.addHandler(fh)
 
 
 class WarriorDispatcher(object):
@@ -48,7 +48,10 @@ class WarriorDispatcher(object):
         logistic = lambda x: 1. / (1+math.exp(-x))
         n = len(self.bot.enemy_hills)
         if n == 0:
-            return 0
+            if len(self.bot.ants) < 10:
+                return 0
+            else:
+                return 0.1
         else:
             return logistic(n)
 
