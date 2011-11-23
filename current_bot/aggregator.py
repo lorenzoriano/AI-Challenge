@@ -4,22 +4,6 @@ import logging
 import pezz_logging
 
 logger = logging.getLogger("pezzant.aggregator")
-#loglevel = logging.INFO
-#logger.setLevel(loglevel)
-##fh = logging.StreamHandler(sys.stderr)
-#fh = logging.FileHandler("bot.txt", mode="a")
-#fh.setLevel(loglevel)
-#formatter = logging.Formatter(
-                #"%(levelname)s "
-                #"Turn: %(turn)d "
-                #"%(ant)s - "
-                #"%(funcName)s:"
-                #"%(lineno)s >> "
-                #"%(message)s"
-                #)
-#fh.setFormatter(formatter)
-#logger.addHandler(fh)
-
 
 def aggr_check_status(self):
     res = self.__class__.check_status(self)
@@ -75,6 +59,10 @@ class Aggregator(object):
         step_fun: the new step function
         """
         self.log.info("Taking control of %s", ant)
+        if hasattr(ant, "aggregator"):
+            self.log.info("stealing %s from %s", ant, ant.aggregator)
+            ant.aggregator.remove_ant(ant)
+        
         ant.step = types.MethodType(aggr_step, ant, ant.__class__)
         ant.check_status = types.MethodType(aggr_check_status, ant,
                 ant.__class__)

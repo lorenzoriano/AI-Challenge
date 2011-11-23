@@ -39,7 +39,9 @@ def readline(sock):
 
 
 time_out = 1.0
-def tcp(host, port, bot_command, user, password, options):     
+bot = None
+def tcp(host, port, bot_command, user, password, options):    
+    global bot
     global time_out
     # spread out if in batch mode, to allow more random ordering on the server
     time.sleep(time_out + 5.0 * random.random())
@@ -132,14 +134,14 @@ def tcp(host, port, bot_command, user, password, options):
         #print( client_mess )
 
         sock.sendall( client_mess )
-                
-    try:
+    
+    try:   
+        print "killing the bot ", bot
         bot.kill()
         sock.close()
         sock = None
     except:
         pass
-
 
 
 def check_string( pname, use ):
@@ -180,6 +182,10 @@ def main():
     for i in range(rounds):
         tcp(host, port, botpath, pname, password, {})
         
+    global bot
+    print "killing the bot ", bot, " pid: ", bot.pid
+    bot.kill()
+    bot.terminate()
     
 if __name__ == "__main__":
     main()

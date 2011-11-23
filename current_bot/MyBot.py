@@ -9,6 +9,7 @@ import pezz_logging
 import logging
 import explorer_dispatcher
 import warrior_dispatcher
+import defender_dispatcher
 import mover
 from timetracker import TimeTracker
 
@@ -63,9 +64,12 @@ class PezzBot:
                 world, self)
         self.warrior_dispatcher = warrior_dispatcher.WarriorDispatcher(
                 world, self)
+        self.defender_dispatcher = defender_dispatcher.DefenderDispatcher(
+                world, self)
 
         self.dispatchers = [self.explorer_dispatcher,
-                            self.warrior_dispatcher]
+                            self.warrior_dispatcher,
+                            self.defender_dispatcher]
         self.mover = mover.Mover(world, self)
 
         self.unseen = set( (r,c) for r in xrange(world.rows)
@@ -187,6 +191,7 @@ class PezzBot:
                     world.map_value(h))
         self.log.info("number of explorer: %d", len(self.explorer_dispatcher.ants))
         self.log.info("number of warrior: %d", len(self.warrior_dispatcher.ants))
+        self.log.info("number of defender: %d", len(self.defender_dispatcher.ants))
         postloop_time = self.postloop_tracker.tock()
         
         self.ants_tracker.reset()

@@ -3,6 +3,7 @@ import fsm
 import numpy as np
 import heapq
 import castar
+import defender
 
 class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
     """
@@ -127,6 +128,18 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         self.log.info("ant %s attacks towards %s", self.current_ant,
                 self.attack_pos)
         self.current_ant.move_to(self.attack_pos)
+    
+    @staticmethod
+    def check_if_grab(ant):
+        """
+        Return true if it can grab an ant
+        """
+        if hasattr(ant, "aggregator"):
+            return False
+        elif type(ant) is defender.Defender:
+            return False
+        else:
+            return True
 
 def create(calling_ant, neighbour_size, neighbour_dist):
     """
@@ -152,7 +165,7 @@ def create(calling_ant, neighbour_size, neighbour_dist):
         if ant is None:
             continue
         #don't steal other ants
-        if not hasattr(ant, 'aggregator'):
+        if ExplorerFlock.check_if_grab(ant):
             ant_list.append(ant)
     
     if len(ant_list) >= neighbour_size:

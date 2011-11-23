@@ -1,27 +1,9 @@
 import warrior
 import logging
 import pezz_logging
-import random
-import sys
 import math
 
 logger = logging.getLogger("pezzant.warrior_dispatcher")
-#loglevel = logging.INFO
-#logger.setLevel(loglevel)
-#fh = logging.FileHandler("bot.txt", mode="w")
-##fh = logging.StreamHandler(sys.stderr)
-#fh.setLevel(loglevel)
-#formatter = logging.Formatter(
-                #"%(levelname)s "
-                #"Turn: %(turn)d "
-                #"WarriorDispatcher - "
-                #"%(funcName)s:"
-                #"%(lineno)s >> "
-                #"%(message)s"
-                #)
-#fh.setFormatter(formatter)
-#logger.addHandler(fh)
-
 
 class WarriorDispatcher(object):
     """
@@ -51,9 +33,9 @@ class WarriorDispatcher(object):
             if len(self.bot.ants) < 10:
                 return 0
             else:
-                return 0.1
+                return 0.2
         else:
-            return logistic(n)
+            return logistic(5*n - len(self.ants))
 
     def create_ant(self, loc):
         """

@@ -8,22 +8,6 @@ import sys
 from fsm import FSM
 
 logger = logging.getLogger("pezzant.singleant")
-#loglevel = logging.INFO
-#logger.setLevel(loglevel)
-#fh = logging.FileHandler("bot.txt", mode="w")
-#fh = logging.StreamHandler(sys.stderr)
-#fh.setLevel(loglevel)
-#formatter = logging.Formatter(
-#                "%(levelname)s "
-#                "Turn: %(turn)d "
-#                "%(ant)s - "
-#                "%(funcName)s:"
-#                "%(lineno)s >> "
-#                "%(message)s"
-#                )
-#fh.setFormatter(formatter)
-#logger.addHandler(fh)
-
 
 ant_ids = 0
 class SingleAnt(FSM):
@@ -51,6 +35,7 @@ class SingleAnt(FSM):
         self.plan_cache_age = 0
         self.max_cache_age = 10
         self.current_heading = 'n'
+        self.planner = castar
 
         global ant_ids
         self.id = ant_ids
@@ -183,7 +168,7 @@ class SingleAnt(FSM):
         #no plan in the cache, running A*
         self.log.info("planning to %s", loc)
 
-        path = castar.pathfind(self.pos, loc, self.bot, self.world)
+        path = self.planner.pathfind(self.pos, loc, self.bot, self.world)
         self.plan_cache[loc] = path
         self.plan_cache_age = 0
         return path
@@ -242,6 +227,19 @@ class SingleAnt(FSM):
 
         return food
 
+    def enemy_in_range(self, r):
+        """
+        Returns True if an enemy is less than r distant from the ant.
+        """
+
+        world = self.world
+        for e in world.enemy_ants():
+            d = world.distance(self.pos, e[0])
+            if d <= r:
+                self.log.info("Enemy %s in range, distance: %s",e[0],d)
+                return True
+        return False
+    
     def enemies_in_range(self, r):
         """
         Returns an ordered list of (dist, location) of all the enemy 

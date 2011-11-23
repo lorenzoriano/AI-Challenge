@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import sys
 import traceback
-import random
 import time
 from collections import defaultdict
 from math import sqrt
 import numpy as np
+import random
 np.seterr(divide='raise')
 
 timingf = time.time
