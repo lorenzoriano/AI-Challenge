@@ -2,23 +2,7 @@ from MyBot import ants
 import logging
 import pezz_logging
 
-logger = logging.getLogger("pezzant.MyBot")
-#loglevel = logging.INFO
-#logger.setLevel(loglevel)
-##fh = logging.StreamHandler(sys.stderr)
-#fh = logging.FileHandler("bot.txt", mode="a")
-#fh.setLevel(loglevel)
-#formatter = logging.Formatter(
-                #"%(levelname)s "
-                #"Turn: %(turn)d "
-                #"%(ant)s - "
-                #"%(funcName)s:"
-                #"%(lineno)s >> "
-                #"%(message)s"
-                #)
-#fh.setFormatter(formatter)
-#logger.addHandler(fh)
-
+logger = logging.getLogger("pezzant.Mover")
 
 class Mover(object):
     def __init__(self, world, bot):
@@ -125,6 +109,7 @@ class Mover(object):
         Return:
         None
         """
+        moved_ants = set()
         while len(self.moving) > 0:
             elem = self.moving.pop()
             chain = set((elem,))
@@ -133,7 +118,10 @@ class Mover(object):
                 #self.log.info("The chain %s moves!", chain)
                 for pos in chain:
                     ant = self.pos_mapping[pos]
-                    ant.movement_success(self.orders[ant])
+                    if ant not in moved_ants:
+                        self.log.info("Telling %s that it can move", ant)
+                        ant.movement_success(self.orders[ant])
+                        moved_ants.add(ant)
                 self.moving.difference_update(chain)
                 self.notmoving.difference_update(chain)
             else:
