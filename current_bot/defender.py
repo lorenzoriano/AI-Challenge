@@ -17,18 +17,6 @@ class Defender(singleant.SingleAnt):
                 for h in world.my_hills())[1]
         self.dispatcher = dispatcher
     
-    def enemy_in_range(self, r):
-        """
-        Returns True if an enemy is less than r distant from the home hill.
-        """
-
-        world = self.world
-        for e in world.enemy_ants():
-            d = world.distance(self.myhill, e[0])
-            if d <= r:
-                return True
-        return False
-
     def orbit(self):
         """
         Moves randomly, but if the the distance from the assigned hill is
@@ -36,9 +24,10 @@ class Defender(singleant.SingleAnt):
         is close.
         """
         
-        if self.enemy_in_range(defenders_flock.DefendersFlock.danger_radius):
-            defenders_flock.create(self,
-                    defenders_flock.DefendersFlock.danger_radius)
+        r = defenders_flock.DefendersFlock.danger_radius
+        enemies = self.enemies_in_range(r)
+        if len(enemies):
+            defenders_flock.create(self,r, len(enemies))
             return
 
         if self.world.distance(self.pos, self.myhill) > 5:
