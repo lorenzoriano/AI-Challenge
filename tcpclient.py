@@ -8,7 +8,8 @@ import string
 import random
 import subprocess
 from socket import socket, AF_INET, SOCK_STREAM
-
+import os
+import signal
 
 USAGE="""
 
@@ -66,6 +67,7 @@ def tcp(host, port, bot_command, user, password, options):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             shell=True,
+            preexec_fn=os.setsid,
             #~ cwd="."
             )
     except:
@@ -184,6 +186,7 @@ def main():
         
     global bot
     print "killing the bot ", bot, " pid: ", bot.pid
+    os.killpg(bot.pid, signal.SIGTERM)
     bot.kill()
     bot.terminate()
     
