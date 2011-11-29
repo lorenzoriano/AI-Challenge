@@ -1,9 +1,8 @@
 import aggregator
 import fsm
-import numpy as np
 import heapq
 import castar
-import defender
+import defenders_flock
 
 class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
     """
@@ -12,7 +11,7 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
     """
 
     clustering_std = 1.0
-    min_attacking_steps = 5
+    max_group_size = 3
 
     def __init__(self, leader, antlist):
         """
@@ -25,13 +24,7 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         aggregator.Aggregator.__init__(self, leader, antlist)
         fsm.FSM.__init__(self, "group")
         self.current_ant = leader
-        self.centroid = None
-        self.grouping_step = 0
-        self.attacking_step = 0
         self.attack_pos = None
-        self.grouping = 0
-        self.previous_poses = None
-        self.current_poses = None
 
     def step(self, ant):
         """
@@ -48,22 +41,18 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         Calculates the centroid and grouping of all the ants. This function
         also controls the transitions of the FSM
         """
-        self.previous_poses = self.current_poses
-        self.current_poses = [ant.pos for ant in self.controlled_ants]
-        arr = np.array(self.current_poses)
-        m = np.mean(arr,0)
-        self.centroid = (int(round(m[0])),
-                         int(round(m[1]))
-                        )
-        self.log.info("New centroid: %s", self.centroid)
-        #grouping_steps is measured per turn
-       
-        self.grouping = np.max(np.std(arr,0))
-        self.log.info("Grouping value of %f", self.grouping)
-
-        #the steps are calculated once per turn
-        #self.grouping_step += 1
-        self.attacking_step += 1
+        super(ExplorerFlock, self).newturn()
+        self.calculate_grouping()
+        
+        if self.previous_poses == self.current_poses:
+            self.log.info("Ants didn't move, stepping out of grouping")
+            self.setup_planner(False)
+            return self.transition_delayed("attack")
+        
+        if (self.grouping > self.clustering_std): 
+            self.log.info("Grouping value %f, time to regroup", self.grouping)
+            self.setup_planner(True)
+            return self.transition_delayed("group")
 
     def check_status(self):
         """
@@ -92,25 +81,8 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
     def group(self):
         """
         Moves all the ants towards the current centroid. 
-        If it has spent more than max_grouping_steps in this state, or if
-        the ants are compact enough, it transits to attack
-        transit to max_grouping_steps.
-
         """
-        self.attacking_step = 0
-        #if self.grouping_step > self.max_grouping_steps:
-        #    self.log.info("After speing %d turns in grouping, time to attack",
-        #                self.grouping_step)
-        #    return self.transition("attack")
         
-        if self.previous_poses == self.current_poses:
-            self.log.info("Ants didn't move, stepping out of grouping")
-            return self.transition("attack")
-        
-        if self.grouping <= self.clustering_std:
-            self.log.info("Grouping value %, time to attack")
-            return self.transition("attack")
-
         self.log.info("moving ant %s towards the centre", self.current_ant)
         self.current_ant.move_to(self.centroid)
 
@@ -118,12 +90,6 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         """
         Move the ants towards the enemies
         """
-        self.grouping_step = 0
-        
-        if (self.grouping > self.clustering_std and 
-                self.attacking_step > self.min_attacking_steps):
-            self.log.info("Grouping value %, time to regroup")
-            return self.transition_delayed("group")
 
         self.log.info("ant %s attacks towards %s", self.current_ant,
                 self.attack_pos)
@@ -135,8 +101,6 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         Return true if it can grab an ant
         """
         if hasattr(ant, "aggregator"):
-            return False
-        elif type(ant) is defender.Defender:
             return False
         else:
             return True
@@ -156,6 +120,7 @@ def create(calling_ant, neighbour_size, neighbour_dist):
     True if the Aggregator could be formed, False if less than neighbout_size
     ants are closer than neighbour_dist.
     """
+    #TODO this can be optimized, see the other flocks
     close_locations = castar.find_near(calling_ant.pos, neighbour_dist)
     ant_list = [calling_ant]
     bot = calling_ant.bot
@@ -167,6 +132,8 @@ def create(calling_ant, neighbour_size, neighbour_dist):
         #don't steal other ants
         if ExplorerFlock.check_if_grab(ant):
             ant_list.append(ant)
+            if len(ant_list) >= ExplorerFlock.max_group_size:
+                break
     
     if len(ant_list) >= neighbour_size:
         #create the Aggregator, which will store an instance of itself in each
