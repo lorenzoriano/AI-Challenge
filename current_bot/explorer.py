@@ -4,7 +4,8 @@ import singleant
 import random
 #import ants
 import explorers_flock 
-
+import defenders_flock
+from math import sqrt
 
 class Explorer(singleant.SingleAnt):
     """
@@ -19,7 +20,8 @@ class Explorer(singleant.SingleAnt):
         super(Explorer, self).__init__(loc, bot, world, "explore_state")
         
         self.goal_pos = None
-        self.danger_radius = 1.5 * world.attackradius2
+        self.danger_radius = 2 + int(sqrt(world.attackradius2))
+        #self.danger_radius = 1.5 * world.attackradius2
         self.dispatcher = dispatcher
         self.area_loc = area_loc
         self.food_gather_range = food_range
@@ -35,23 +37,13 @@ class Explorer(singleant.SingleAnt):
         """
         r = self.food_gather_range
         area_loc = self.area_loc
-        maxrow = self.world.rows
-        maxcol = self.world.cols
 
         row = random.randint(area_loc[0]-r, area_loc[0]+r)
-        if row < 0:
-            row = maxrow + row
-        elif row > maxrow:
-            row = row - maxrow
-
         col = random.randint(area_loc[1]-r, area_loc[1]+r)
-        if col < 0:
-            col = maxcol + col
-        elif col > maxcol:
-            col = col - maxcol 
+        newpos = self.world.wrap_coords((row,col))
         
-        self.log.info("random movement to %s", (row,col))
-        return  (row, col)
+        self.log.info("random movement to %s", newpos)
+        return  newpos
 
     def check_reserve_food(self):
         """
@@ -89,7 +81,6 @@ class Explorer(singleant.SingleAnt):
         """
         
         #checking for enemies
-        self.enemies = self.enemies_in_range(self.danger_radius)
         if len(self.enemies):
             if self.check_if_run(self.enemies[0][1]):
                 return self.transition("escape_state")
@@ -108,7 +99,6 @@ class Explorer(singleant.SingleAnt):
         Transition to explore_state if goal reached
         """
         #checking for enemies
-        self.enemies = self.enemies_in_range(self.danger_radius)
         if len(self.enemies):
             if self.check_if_run(self.enemies[0][1]):
                 return self.transition("escape_state")
@@ -145,7 +135,6 @@ class Explorer(singleant.SingleAnt):
         food_loc = self.food
         
         #checking for enemies
-        self.enemies = self.enemies_in_range(self.danger_radius)
         if len(self.enemies):
             if self.check_if_run(self.enemies[0][1], food_loc):
                 self.dispatcher.free_food(self.food)
@@ -173,10 +162,22 @@ class Explorer(singleant.SingleAnt):
         no enemy is close anymore
         """
         #checking if it can turn into an aggregator
+        hills = self.my_hills(10)
+        if (len(hills) and len(self.enemies) and
+               self.world.distance(self.enemies[0][1], min(hills)[1]) < 10) : 
+            #things are harsh, better create a defendersflock
+            self.myhill = min(hills)[1]
+            self.log.info("My hill is at %s, number of enemies is %d",
+                    self.myhill, len(self.enemies))
+            if defenders_flock.create(self, 10, len(self.enemies)):
+                self.log.info("creating a DefendersFlock")
+                return self.transition_delayed("forage_state")
+            else:
+                self.log.info("No DefendersFlock will be created")
+
         if explorers_flock.create(self, 3, 10):
             return self.transition("explore_state")
         #checking for enemies
-        self.enemies = self.enemies_in_range(self.danger_radius)
         if len(self.enemies) == 0:
             self.log.info("Danger is gone")
             return self.transition("explore_state")
@@ -192,3 +193,10 @@ class Explorer(singleant.SingleAnt):
             #desperate random move
             dir = random.choice(['n', 's', 'w', 'e'])
             self.move_heading(dir)
+
+    def step(self):
+        """Calculate the number of nearby enemies before giving control to 
+            the FSM
+        """
+        self.enemies = self.enemies_in_range(self.danger_radius)
+        return super(Explorer, self).step()
