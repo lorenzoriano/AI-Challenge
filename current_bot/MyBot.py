@@ -78,7 +78,9 @@ class PezzBot:
         self.ants_tracker = TimeTracker(0)
         self.preloop_tracker = TimeTracker(0)
         self.postloop_tracker = TimeTracker(0)
-        castar.setup(world.map)
+        castar.setup(world.map, world)
+        self.log.info("Attack disc: \n%s", world.attack_disc)
+        self.log.info("Attack disc 1: \n%s", world.attack_disc_1)
 
     def iterate_ants_loc(self):
         """
@@ -135,7 +137,7 @@ class PezzBot:
         self.preloop_tracker.tick()
         self.log.info("----------")
         self.log.info("Start turn")
-        castar.setup(world.map)
+        castar.setup(world.map, world)
         self.turn += 1
 
         #adding enemy hills
@@ -150,7 +152,7 @@ class PezzBot:
 
         #removing visible locations
         for loc in self.unseen.copy():
-            if world.visible[loc[0], loc[1]]:
+            if world.visible[loc]:
                 self.unseen.discard(loc)
 
         #removing dead_ants
