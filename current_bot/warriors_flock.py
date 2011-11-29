@@ -1,54 +1,11 @@
+"""
+This is a docstring to make pylint happy
+"""
 import aggregator
 import fsm
-import numpy as np
-import heapq
 import castar
-import random
 import warrior
-import defender
-from MyBot import ants
-
-import astar
-class GroupPlanner(object):
-    """
-    This planner will not penalize movement over other ants, therefore
-    allowing for a more compact group motion.
-    It mimics the interface of the castar module.
-    """
-    def __init__(self, mat):
-        self.astar_mat = astar.MatrixHolder(mat)
-        self.astar_m = astar.AstarMatrix(self.astar_mat,10000,4)
-    
-    def reset(self, mat):
-        """
-        Reset the astar structures.
-        """
-        self.astar_mat.setMat(mat)
-        self.astar_m.reset()
-    
-    def pathfind(self, start_pos, goal_pos, bot = None, world = None):
-        """
-        Plan a path from start_pos to goal_pos.
-
-        Returns the path, which is empty if no path was found
-        """
-        path, cost = self.astar_m.solve(start_pos, goal_pos)
-        if len(path) == 0:
-            return []
-        else:
-            return path[1:]
-
-    def find_near(self, start_pos, max_cost):
-        """
-        Find all the cells within max_cost distance.
-        Returns a list of the cells, empty if no cell
-        was found. The starting cell will not be included.
-        """
-        cells = self.astar_m.solve_for_near_states(start_pos, max_cost)
-        if len(cells) == 0:
-            return cells
-        else:
-            return cells[1:]
+import defenders_flock
 
 class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
     """
@@ -67,10 +24,10 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
     If there are no visible enemy hills the group dibands.
     """
 
-    clustering_std = 1.5
-    min_attacking_steps = 0
-    min_group_size = 3
-    max_ants = 6
+    clustering_std = 1.1
+    min_group_size = 0
+    max_ants = 10
+    min_dist_to_copt = 30
 
     def __init__(self, leader, antlist, neighbour_dist):
         """
@@ -80,25 +37,13 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         antlist: a list of ants to add to this aggregator
         neighbout_dist: the max dist to gather new elements
         """
-        self.planner = GroupPlanner(leader.world.map)
         aggregator.Aggregator.__init__(self, leader, antlist)
         fsm.FSM.__init__(self, "group")
         self.current_ant = leader
-        self.centroid = None
         self.attack_pos = None
-        self.grouping = 0
-        self.previous_poses = None
-        self.current_poses = None
         self.neighbour_dist = neighbour_dist
         self.danger_radius = 1.5 * leader.world.attackradius2
         self.world = leader.world
-
-    def setup_planner(self, group_state):
-        newmat = np.ones(self.world.map.shape, dtype=np.float64)
-        newmat[self.world.map == ants.WATER] = -1
-        if group_state:
-            newmat[self.world.map == ants.ANTS] = 4
-        self.planner.reset(newmat)
 
     def step(self, ant):
         """
@@ -109,40 +54,6 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
             return
         self.current_ant = ant
         fsm.FSM.step(self)
-
-    def control(self, ant):
-        """
-        Replaces the ant astar
-        """
-        self.log.info("Replacing the astar of %s", ant)
-        super(WarriorsFlock, self).control(ant)
-        ant.planner = self.planner
-
-    def remove_ant(self,ant):
-        """
-        Restore the ant's castar
-        """
-        self.log.info("Restoring the astar of %s", ant)
-        super(WarriorsFlock, self).remove_ant(ant)
-        ant.planner = castar
-
-    def calculate_grouping(self):
-        """
-        Calculate the grouping factor and the centroid of all the 
-        controlled ants.
-        
-        Grouping is defined as the standard deviation between the poses
-        of all the ants.
-        """
-        arr = np.array(self.current_poses)
-        m = np.mean(arr,0)
-        self.centroid = (int(round(m[0])),
-                         int(round(m[1]))
-                        )
-        self.log.info("New centroid: %s", self.centroid)
-       
-        self.grouping = np.max(np.std(arr,0))
-        self.log.info("Grouping value of %f", self.grouping)
 
     def free_non_warriors(self):
         """
@@ -158,25 +69,22 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         Calculates the centroid and grouping of all the ants. Add ants to
         this group.
         """
-        self.previous_poses = self.current_poses
-        self.current_poses = [ant.pos for ant in self.controlled_ants]
-        
+        super(WarriorsFlock, self).newturn()
         bot = self.leader.bot
         close_enemy = any(a.enemy_in_range(self.danger_radius)
                 for a in self.controlled_ants)
-        if (not close_enemy) and (self.attack_pos not in bot.enemy_hills):
-            self.free_non_warriors()
         
-        if self.attack_pos in bot.enemy_hills:
-            self.log.info("I am going for an hill, copting elements")
-            antlist = bot.ants
-        elif close_enemy:
-            self.log.info("enemies around, copting elements")
+        #the enemy hill is closer than the home hill
+        ehill_d = self.world.distance(self.leader.pos, self.attack_pos)
+        mhill_d = self.world.distance(self.leader.pos, 
+                min(self.leader.my_hills())[1])
+        if (ehill_d < mhill_d):
+            self.log.info("The hill is close, copting")
             antlist = bot.ants
         else:
-            antlist = bot.warrior_dispatcher.ants
-
-
+            self.log.info("The hills is not close, not copting")
+            antlist = []
+        
         copted_ants = (a for a in antlist
                     if self.check_if_grab(a) and 
                     (0 < 
@@ -192,12 +100,14 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
             self.control(ant)
 
         self.calculate_grouping()
+        
         #transitions
         if self.previous_poses == self.current_poses:
             self.log.info("Ants didn't move, stepping out of grouping")
             self.setup_planner(False)
             return self.transition_delayed("attack")
-        elif close_enemy and (self.grouping > self.clustering_std):
+        elif ( (close_enemy or self.state=="group") 
+                and (self.grouping > self.clustering_std)):
             self.log.info("Enemies nearby, regrouping")
             self.log.info("Grouping value is: ", self.grouping)
             self.log.info("Ants pos are: ", self.current_poses)
@@ -222,29 +132,18 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         
         enemy_hills = self.bot.enemy_hills
         if len(enemy_hills) == 0:
-            self.log.info("No more enemy hills!")
-            
-            #going for unseen location
-            unseen_locs = self.leader.unseen_locations()
-            if (unseen_locs):
-                self.attack_pos = unseen_locs[0][1]
-                self.log.info("going for unseen loation")
-                return True
-            else:
-                return False
-        
+            self.log.info("No more enemy hills, disbanding!")
+            return False            
+       
         #here we have discovered enemy hills 
         if self.attack_pos in enemy_hills:
             self.log.info("I already know my target: %s", self.attack_pos)
             return True
 
         #calculating the distance between the enemy hills and the leader
-        hills_dists = []
-        for hill in enemy_hills:
-            d = len(castar.pathfind(self.leader.pos, hill))
-            if d != 0:
-                heapq.heappush(hills_dists, (d, hill))
-        self.attack_pos = hills_dists[0][1]
+        hills_dists = [(self.world.distance(self.leader.pos, h), h) 
+                for h in enemy_hills]
+        self.attack_pos = min(hills_dists)[1]
 
         return True
 
@@ -270,9 +169,9 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         """
         Return true if it can grab an ant
         """
-        if hasattr(ant, "aggregator"):
+        if getattr(ant, "aggregator", None) is defenders_flock.DefendersFlock:
             return False
-        elif type(ant) is defender.Defender:
+        if getattr(ant, "aggregator", None) is WarriorsFlock:
             return False
         else:
             return True
@@ -285,8 +184,9 @@ def create(calling_ant, neighbour_dist):
     """
     ant_list = set([calling_ant])
     bot = calling_ant.bot
-    free_ants = (a for a in bot.warrior_dispatcher.ants
-                    if WarriorsFlock.check_if_grab(a) and 
+    free_ants = (a for a in bot.ants
+                    if WarriorsFlock.check_if_grab(a) and
+                    type(a) is warrior.Warrior and
                     (0 < 
                      len(castar.pathfind(calling_ant.pos, a.pos)) 
                      < neighbour_dist
