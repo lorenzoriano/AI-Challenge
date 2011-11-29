@@ -91,6 +91,8 @@ class Ants():
         self.map.fill(UNSEEN)
         self.visible = np.zeros((self.rows, self.cols), dtype = np.bool)
         self._vision_setup()
+        self._attack_setup()
+        self._attack_setup_1()
 
     def update(self, data):
         "Parse engine input and update the game state"
@@ -296,6 +298,26 @@ class Ants():
         for y, x in np.ndindex(*self.vision_disc.shape):
             if (viewradius - y)**2 + (viewradius - x)**2 <= self.viewradius2:
                 self.vision_disc[y, x] = True
+    
+    def _attack_setup(self):
+        """Precalculate a circular mask of locations that could be attacked"""
+        attackradius = int(sqrt(self.attackradius2))
+        diameter = attackradius * 2 + 1
+        self.attack_disc = np.zeros((diameter, diameter), dtype = np.bool)
+        for y, x in np.ndindex(*self.attack_disc.shape):
+            if (attackradius - y)**2 + (attackradius - x)**2 <= self.attackradius2:
+                self.attack_disc[y, x] = True
+    
+    def _attack_setup_1(self):
+        """Precalculate a circular mask of locations one step before being
+        attacked."""
+        newrad2 = self.attackradius2
+        attackradius = int(sqrt(newrad2)) +1
+        diameter = attackradius * 2 + 1 
+        self.attack_disc_1 = np.zeros((diameter, diameter), dtype = np.bool)
+        for y, x in np.ndindex(*self.attack_disc_1.shape):
+            if (attackradius - y)**2 + (attackradius - x)**2 <= newrad2:
+                self.attack_disc_1[y, x] = True
 
     def _update_visible(self):
         self.visible.fill(False)
