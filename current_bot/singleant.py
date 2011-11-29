@@ -33,7 +33,7 @@ class SingleAnt(FSM):
         self.mover = bot.mover
         self.plan_cache = {}
         self.plan_cache_age = 0
-        self.max_cache_age = 10
+        self.max_cache_age = 0
         self.current_heading = 'n'
         self.planner = castar
 
@@ -146,7 +146,7 @@ class SingleAnt(FSM):
             self.log.info("goal %s is my location!", loc)
             return []
 
-        if self.plan_cache_age > self.max_cache_age:
+        if self.plan_cache_age >= self.max_cache_age:
             self.log.info("plan cache too old, resetting")
             self.reset_cache()
 
@@ -256,9 +256,9 @@ class SingleAnt(FSM):
 
         return enemies
     
-    def unseen_locations(self):
+    def unseen_locations(self, r=1000):
         """
-        Returns an ordered list of (dist, location) of all the enemy 
+        Returns a NON-ordered list of (dist, location) of all the enemy 
         locations whose distance is <= r
         """
 
@@ -267,6 +267,23 @@ class SingleAnt(FSM):
         unseen_locs = []
         for loc in self.bot.unseen:
             d = world.distance(self.pos, loc)
-            heapq.heappush(unseen_locs,(d,loc) )
+            if d <= r:
+                unseen_locs.append((d,loc) )
 
         return unseen_locs
+
+    def my_hills(self, r=1000):
+        """
+        Returns a NON-ordered list of (dist, location) of all the enemy 
+        locations whose distance is <= r
+        """
+
+        world = self.world
+
+        my_hills = []
+        for loc in self.world.my_hills():
+            d = world.distance(self.pos, loc)
+            if d <= r:
+                my_hills.append((d,loc) )
+
+        return my_hills
