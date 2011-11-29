@@ -31,6 +31,7 @@ class DefenderDispatcher(object):
         will be created.
         Otherwise return a high likelyhood.
         """
+        return 0.
         hills_to_assign = set(self.world.my_hills()).difference(
                 self.assigned_hills)
         self.log.info("hills to assign: %s", hills_to_assign)
