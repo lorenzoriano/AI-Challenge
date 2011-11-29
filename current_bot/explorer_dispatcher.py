@@ -2,25 +2,8 @@ import explorer
 import logging
 import pezz_logging
 import random
-import sys
 
 logger = logging.getLogger("pezzant.explorer_dispatcher")
-#loglevel = logging.INFO
-#logger.setLevel(loglevel)
-#fh = logging.FileHandler("bot.txt", mode="a")
-##fh = logging.StreamHandler(sys.stderr)
-#fh.setLevel(loglevel)
-#formatter = logging.Formatter(
-                #"%(levelname)s "
-                #"Turn: %(turn)d "
-                #"ExplorerDispatcher - "
-                #"%(funcName)s:"
-                #"%(lineno)s >> "
-                #"%(message)s"
-                #)
-#fh.setFormatter(formatter)
-#logger.addHandler(fh)
-
 
 class ExplorerDispatcher(object):
     """
