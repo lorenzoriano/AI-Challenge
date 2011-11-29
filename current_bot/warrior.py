@@ -1,8 +1,8 @@
 import MyBot
 ants = MyBot.ants
 import singleant
-import random
 import warriors_flock
+import random
 
 class Warrior(singleant.SingleAnt):
     """
@@ -14,63 +14,57 @@ class Warrior(singleant.SingleAnt):
     def __init__(self, loc, bot, world, dispatcher,
                 ):
         
-        super(Warrior, self).__init__(loc, bot, world, "move_random_state")
+        super(Warrior, self).__init__(loc, bot, world, "planning_state")
         
-        self.goal_hill = None
+        self.goal = None
         self.dispatcher = dispatcher
-    
-    def plan_for_hill_state(self):
+   
+    def planning_state(self):
         """
-        Plans for the closest hill, or random movement if no hill in sight
+        The Warrior will go either towards an unseen location, or towards
+        an enemy_hill
         """
-        #if random.random() < 0.3:
-        #    warriors_flock.create(self, 15)
-
-        world = self.world
         bot = self.bot
-
+        if self.goal in bot.enemy_hills:
+            return self.transition("attack_hill_state")
+        
+        world = self.world
         hills = [(world.distance(self.pos, h),h) for h in bot.enemy_hills]
         if len(hills) == 0:
-            self.log.info("No hills, dying")
-            self.pos = (-1,-1)
-            return None
-            
-        self.goal_hill = min(hills)[1]
-        self.log.info("going for hill %s", self.goal_hill)
-        return self.transition("moving_hill_state")
+            self.log.info("No enemy hills, exploring")
+            return self.transition("explore_state")
 
-    def moving_hill_state(self):
+        self.goal = min(hills)[1]
+        self.log.info("going for hill %s", self.goal)
+        return self.transition("attack_hill_state")
+
+
+    def attack_hill_state(self):
         """
-        Move towards an enemy hill    
+        Move towards an enemy hill, copting ants in the meantime   
         """
-        #if random.random() < 0.3:
-        #    warriors_flock.create(self, 15)
-        
-        r,c = self.goal_hill
-        if self.goal_hill not in self.bot.enemy_hills:
+        if warriors_flock.create(self, 10):
+            return self.transition_delayed("planning_state")
+        if self.goal not in self.bot.enemy_hills:
             self.log.info("My goal hill at %s doesn't exist anymore!",
-                    self.goal_hill)
-            return self.transition("plan_for_hill_state")
-        if self.pos == self.goal_hill:
+                    self.goal)
+            return self.transition("planning_state")
+        if self.pos == self.goal:
             self.log.info("Goal reached")
             #chances are this was an enemy hill
             self.bot.enemy_hills.discard(self.pos)
-            return self.transition_delayed("plan_for_hill_state")
+            return self.transition("planning_state")
 
-        if not self.move_to(self.goal_hill):
-            return self.transition("move_random_state")
-     
-    def move_random_state(self):
+        self.move_to(self.goal)
+        return self.transition_delayed("planning_state")
+    
+    def explore_state(self):
         """
-        Move to a random direction.
+        The Warrior will move towards the closest unseen location.
         """
-        if warriors_flock.create(self, 10):
-            return
-        directions = ['n','s','w','e']
-        random.shuffle(directions)
+        unseen_locs = self.unseen_locations()
+        d, self.goal = random.choice(unseen_locs)
+        self.log.info("going for unseen loation")
+        self.move_to(self.goal)
 
-        for d in directions:
-            if self.move_heading(d):
-                break
-
-        #return self.transition_delayed("plan_for_hill_state")
+        return self.transition_delayed("planning_state")
