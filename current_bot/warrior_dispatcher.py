@@ -27,16 +27,31 @@ class WarriorDispatcher(object):
         ant. The more enemy hills are around, the more it will want to spawn
         a warrior.
         """
-        logistic = lambda x: 1. / (1+math.exp(-x))
-        n = len(self.bot.enemy_hills)
-        if n == 0:
-            if len(self.bot.ants) < 10:
-                return 0
-            else:
-                return 0.2
+        number_of_enemies = len(self.world.enemy_ants())
+        self.log.info("Number of enemy_ants: %d", number_of_enemies)
+        visible = self.world.visible
+        visible_perc = float(visible.sum()) / visible.size
+        self.log.info("World visible is %f", visible_perc)
+        
+        if visible_perc < 0.6:
+            return 0.0
+        estimated_enemies = 1./visible_perc * number_of_enemies
+        self.log.info("Estimated enemies: %f", estimated_enemies)
+        if len(self.bot.ants) > estimated_enemies*(len(self.ants)+1):
+            self.log.info("OK to make a Warrior")
+            return 1.0
         else:
-            return logistic(5*n - len(self.ants))
+            return 0.0
 
+        if len(self.bot.ants) == 0:
+            return 0.0
+        ants_ratio = float(len(self.ants)) / len(self.bot.ants)
+        if ants_ratio < 1./15:
+            return 1.0
+        else:
+            return 0.0
+        
+      
     def create_ant(self, loc):
         """
         Create a Warrior ant if needed.
