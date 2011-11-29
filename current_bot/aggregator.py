@@ -2,6 +2,11 @@ import types
 import random
 import logging
 import pezz_logging
+import group_planner
+import numpy as np
+import MyBot
+ants = MyBot.ants
+import castar
 
 logger = logging.getLogger("pezzant.aggregator")
 
@@ -25,7 +30,9 @@ class Aggregator(object):
         leader: the ants on which many computations might be based.
         antlist: a list of ants to add to this aggregator
         """
+        self.planner = group_planner.GroupPlanner(leader.world.map)
         self.bot = leader.bot
+        self.world = leader.world
         self.log = pezz_logging.TurnAdapter(
                 logger,
                 {"ant": self},
@@ -43,6 +50,24 @@ class Aggregator(object):
 
         self.last_turn = -1
         self.destroyed = False
+        self.centroid = None
+        self.grouping = 0.0
+        self.previous_poses = None
+        self.current_poses = None
+    
+    def setup_planner(self, group_state):
+        """
+        Setup the planner with a new matrix.
+
+        Parameters:
+        group_state: if True, then the ants are not counted as obstacle. 
+                    Useful when trying to keep the group tight
+        """
+        newmat = np.ones(self.world.map.shape, dtype=np.float64)
+        newmat[self.world.map == ants.WATER] = -1
+        if group_state:
+            newmat[self.world.map == ants.ANTS] = 4
+        self.planner.reset(newmat)
 
     def __repr__(self):
         return (self.__class__.__name__ +
@@ -67,6 +92,7 @@ class Aggregator(object):
         ant.check_status = types.MethodType(aggr_check_status, ant,
                 ant.__class__)
         ant.aggregator = self
+        ant.planner = self.planner
         self.controlled_ants.add(ant)
 
     def remove_ant(self, ant):
@@ -81,15 +107,37 @@ class Aggregator(object):
         ant.step = types.MethodType(ant.__class__.step, ant, ant.__class__)
         ant.check_status = types.MethodType(ant.__class__.check_status, ant,
                 ant.__class__)
+        ant.planner = castar
         self.controlled_ants.remove(ant)
 
         #select a new leader
         if len(self.controlled_ants) == 0:
-            return
-        if ant == self.leader:
+            if not self.destroyed:
+                self.log.info("No more controlled ants, destroying")
+                self.destroy()
+        elif ant == self.leader:
             self.leader = random.choice(list(self.controlled_ants))
             self.log.info("Selecting the new leader %s", self.leader)
 
+    def calculate_grouping(self):
+        """
+        Calculate the grouping factor and the centroid of all the 
+        controlled ants.
+        
+        Grouping is defined as the standard deviation between the poses
+        of all the ants.
+        """
+        arr = np.array(self.current_poses)
+        m = np.mean(arr,0)
+        self.centroid = (int(round(m[0])),
+                         int(round(m[1]))
+                        )
+        self.log.info("New centroid: %s", self.centroid)
+        self.log.info("My ants poses are: %s", 
+                [a.pos for a in self.controlled_ants]) 
+        self.grouping = np.max(np.std(arr,0))
+        self.log.info("Grouping value of %f", self.grouping)
+    
     def destroy(self):
         """
         Destroy the aggragator. This has to be called before
@@ -97,19 +145,20 @@ class Aggregator(object):
 
         All the ants will get their set method restored.
         """
+        self.destroyed = True
         self.log.info("getting destroyed")
         self.log.info("my controlled ants are: %s", self.controlled_ants)
         for ant in self.controlled_ants.copy():
             self.remove_ant(ant)
         self.controlled_ants.clear()
-        self.destroyed = True
 
     def newturn(self):
         """
         This method gets executed every time a new turn is ongoing.
         Subclasses should ovverride.
         """
-        raise NotImplementedError 
+        self.previous_poses = self.current_poses
+        self.current_poses = [ant.pos for ant in self.controlled_ants]
 
     def check_status(self):
         """
