@@ -12,9 +12,10 @@ AIM = {'-': (0, 0),
 
 class ConservativeScore(object):
     def __init__(self, simulator, side):
+        self.init_sim = deepcopy(simulator)
         self.side = side
-        self.my_init_ants = simulator.count_owner(self.side)
-        self.enemy_init_ants = simulator.count_enemies(self.side)
+        self.my_init_ants = self.init_sim.count_owner(self.side)
+        self.enemy_init_ants = self.init_sim.count_enemies(self.side)
 
     def __call__(self, simulator):
         my_final_ants = simulator.count_owner(self.side)
@@ -35,9 +36,10 @@ class ConservativeScore(object):
 
 class AggresiveScore(object):
     def __init__(self, simulator, side):
+        self.init_sim = deepcopy(simulator)
         self.side = side
-        self.my_init_ants = simulator.count_owner(self.side)
-        self.enemy_init_ants = simulator.count_enemies(self.side)
+        self.my_init_ants = self.init_sim.count_owner(self.side)
+        self.enemy_init_ants = self.init_sim.count_enemies(self.side)
 
     def __call__(self, simulator):
         my_final_ants = simulator.count_owner(self.side)
@@ -84,12 +86,7 @@ class Simulator(object):
             self.ants.append(newa)
 
         for e in enemies:
-            self.ants.append(Ant(e,1))
-
-    def get_friend_policy(self, policy):
-        ret = dict( [ (self.friends_mapping[a], policy[a])
-                      for a in self.ant_owner(0) ] )
-        return ret
+            self.ants.append(Ant(e.pos,1))
 
     def distance2(self, loc1, loc2):
         "Calculate the closest squared distance between two locations"
@@ -115,8 +112,7 @@ class Simulator(object):
             p = [0] * len(self.actions)
             for i,action in enumerate(self.actions):
                 mov = AIM[action]
-                pos = ((ant.pos[0] + mov[0]) % self.rows, 
-                       (ant.pos[1] + mov[1]) % self.cols)
+                pos = ant.pos[0] + mov[0], ant.pos[1] + mov[1]
                 if self.map[pos] != -4:
                     p[i] = 1
             self.policy[ant] = p
@@ -145,8 +141,8 @@ class Simulator(object):
             if weakness == 0:
                 continue
             # determine the most focused nearby enemy
-            min_enemy_weakness = min(len(nearby_enemies[enemy]) 
-                    for enemy in nearby_enemies[ant])
+            min_enemy_weakness = min([len(nearby_enemies[enemy]) 
+                    for enemy in nearby_enemies[ant]])
             # ant dies if it is weak as or weaker than an enemy weakness
             if min_enemy_weakness <= weakness:
                 ants_to_kill.append(ant)
@@ -215,15 +211,14 @@ class Simulator(object):
     def ant_owner(self, owner):
         return [a for a in self.ants if a.owner == owner]
 
-    def simulate_combat(self, allowed_time,
-                        ant_0_scoring = ConservativeScore,
-                        ant_1_scoring = ConservativeScore,
-                        log = None):
+    def simulate_combat(self, allowed_time):
         start = time.time()
-        score_0 = ant_0_scoring(self, 0)
-        score_1 = ant_1_scoring(self, 1)
+        print "Actions: ", self.actions
+        score_0 = AggresiveScore(self, 0)
+        score_1 = ConservativeScore(self, 1)
         
         self.allowed_policies()
+        print "initial policies: ", self.policy
         init_poses = dict( (a, a.pos) for a in self.ants)
         
         killed = []
@@ -250,18 +245,18 @@ class Simulator(object):
                 else:
                     p[action[a]] += score_1(self)
 
+        print "Steps: ", steps
         for k in killed:
             self.add_ant(k)
         for a,p in init_poses.iteritems():
             a.pos = p
         
         retpolicy = {}
+        print "Raw: ", self.policy
         for a,p in self.policy.iteritems():
             ps = dirichlet(p)
             i = multinomial(1, ps).nonzero()[0][0]
             retpolicy[a] = self.actions[i]
-        if log is not None:
-            log.info("Number of steps: %d", steps)
         return retpolicy
 
 def test1():
@@ -383,12 +378,10 @@ def calculate_policy():
     sim.add_ant(a)
     print "initial: ", sim
     
-    score_0 = ConservativeScore(sim, 0)
-    score_1 = ConservativeScore(sim, 1)
+    score_0 = AggresiveScore(sim,0)
+    score_1 = ConservativeScore(sim,1)
     
-    policy = sim.simulate_combat(5., 
-            score_0.__class__, 
-            score_1.__class__)
+    policy = sim.simulate_combat(1.0)
 
     #ants = sim.ants
     #policy =  {ants[0]:'-', 
