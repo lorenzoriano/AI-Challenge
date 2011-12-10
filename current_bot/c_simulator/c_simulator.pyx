@@ -1,10 +1,14 @@
 from collections import defaultdict
-from numpy.random import dirichlet, multinomial
 import time
-from copy import deepcopy
-import numpy as np
 
-AIM = {'-': (0, 0),
+import numpy as np
+cimport numpy as np
+cimport cython
+
+dirichlet = np.random.dirichlet
+multinomial = np.random.multinomial
+
+cdef dict AIM = {'-': (0, 0),
        'n': (-1, 0),
        'e': (0, 1),
        's': (1, 0),
@@ -12,10 +16,9 @@ AIM = {'-': (0, 0),
 
 class ConservativeScore(object):
     def __init__(self, simulator, side):
-        self.init_sim = deepcopy(simulator)
         self.side = side
-        self.my_init_ants = self.init_sim.count_owner(self.side)
-        self.enemy_init_ants = self.init_sim.count_enemies(self.side)
+        self.my_init_ants = simulator.count_owner(self.side)
+        self.enemy_init_ants = simulator.count_enemies(self.side)
 
     def __call__(self, simulator):
         my_final_ants = simulator.count_owner(self.side)
@@ -36,10 +39,9 @@ class ConservativeScore(object):
 
 class AggresiveScore(object):
     def __init__(self, simulator, side):
-        self.init_sim = deepcopy(simulator)
         self.side = side
-        self.my_init_ants = self.init_sim.count_owner(self.side)
-        self.enemy_init_ants = self.init_sim.count_enemies(self.side)
+        self.my_init_ants = simulator.count_owner(self.side)
+        self.enemy_init_ants = simulator.count_enemies(self.side)
 
     def __call__(self, simulator):
         my_final_ants = simulator.count_owner(self.side)
@@ -58,66 +60,101 @@ class AggresiveScore(object):
         else:
             return 0.0 #we killed less
 
-class Ant(object):
-    def __init__(self, pos, owner):
-        self.pos = pos
-        self.owner = owner
+cdef class _Ant:
+    #TODO change pos in two integers
+    cdef int i, j
+    cdef int owner
+    def __init__(self):
+        raise TypeError("This class cannot be instantiated from Python")
 
     def __repr__(self):
-        return str(self.pos) + ": " + str(self.owner) + " "
+        return str((self.i,self.j)) + ": " + str(self.owner) + " "
 
-class Simulator(object):
-    def __init__(self, map):
+cdef _Ant Ant(int i, int j, int owner):
+    cdef _Ant instance = _Ant.__new__(_Ant)
+    instance.i = i
+    instance.j = j
+    instance.owner = owner
+    return instance
+
+cdef inline int int_max(int a, int b): return a if a >= b else b
+cdef inline int int_min(int a, int b): return a if a <= b else b
+cdef inline int int_abs(int a): return a if a >= 0  else -a
+
+cdef class Simulator:
+    
+    cdef int rows, cols, attackradius
+    cdef list ants 
+    cdef dict movements, next_loc, policy, friends_mapping
+    cdef tuple actions
+    cdef object map
+
+    def __init__(self, np.ndarray[np.int8_t, ndim=2, mode="c"] map not None):
         self.map = map
         self.rows = map.shape[0]
         self.cols = map.shape[1]
         self.ants = []
         self.attackradius = 5
         self.movements = {}
-        self.next_loc = defaultdict(list)
+        self.next_loc = {}
         self.policy = {}
         self.actions = ('n','s','e','w','-')
         self.friends_mapping = {}
 
-    def create_from_lists(self, friends, enemies):
+    cpdef create_from_lists(self, list friends, list enemies):
+        cdef _Ant newa
+        cdef tuple e
         for a in friends:
-            newa = Ant(a.pos, 0)
+            newa = Ant(a.pos[0], a.pos[1], 0)
             self.friends_mapping[newa] = a
             self.ants.append(newa)
 
         for e in enemies:
-            self.ants.append(Ant(e.pos,1))
+            self.ants.append(Ant(e[0], e[1], 1))
 
-    def distance2(self, loc1, loc2):
+    cpdef get_friend_policy(self, dict policy):
+        cdef dict ret = dict( [ (self.friends_mapping[a], policy[a])
+                      for a in self.ant_owner(0) ] )
+        return ret
+
+    cdef int distance2(self, int row1, int col1, int row2, int col2 ):
         "Calculate the closest squared distance between two locations"
-        row1, col1 = loc1
-        row2, col2 = loc2
-        d_col = min(abs(col1 - col2), self.cols - abs(col1 - col2))
-        d_row = min(abs(row1 - row2), self.rows - abs(row1 - row2))
-        return d_row**2 + d_col**2
+        cdef int d_col = int_min(int_abs(col1 - col2), self.cols - int_abs(col1 - col2))
+        cdef int d_row = int_min(int_abs(row1 - row2), self.rows - int_abs(row1 - row2))
+        return d_row*d_row + d_col*d_col
     
-    def nearby_ants(self, ant, max_dist, exclude=None):
-        #TODO this does not work at the boundaries!!!
-        enemies = []
+    cdef list nearby_ants(self, _Ant ant, int max_dist, int exclude=-1):
+        cdef list enemies = []
+        cdef _Ant e
         for e in self.ants:
             if e.owner == exclude:
                 continue
             #if (ant.pos[0]- e.pos[0])**2 + (ant.pos[1] - e.pos[1])**2 <= max_dist:
-            if self.distance2(ant.pos, e.pos) <= max_dist:
+            if self.distance2(ant.i, ant.j, e.i, e.j) <= max_dist:
                 enemies.append(e)
         return enemies
 
-    def allowed_policies(self):
+    cdef void allowed_policies(self):
+        cdef _Ant ant
+        cdef list p
+        cdef int i
+        cdef tuple mov
+        cdef np.ndarray[np.int_t, ndim=2, mode="c"] map = self.map
+        cdef unsigned int r, c
+        cdef unsigned int mov_r, mov_c
+
         for ant in self.ants:
-            p = [0] * len(self.actions)
+            p = [0,0,0,0,0]
             for i,action in enumerate(self.actions):
                 mov = AIM[action]
-                pos = ant.pos[0] + mov[0], ant.pos[1] + mov[1]
-                if self.map[pos] != -4:
+                mov_r, mov_c = mov        
+                r = (ant.i + mov_r) % self.rows 
+                c = (ant.j + mov_c) % self.cols
+                if map[r,c] != -4:
                     p[i] = 1
             self.policy[ant] = p
 
-    def do_attack_focus(self):
+    cdef list do_attack_focus(self):
         """ Kill ants which are the most surrounded by enemies
 
             For a given ant define: Focus = 1/NumOpponents
@@ -126,7 +163,13 @@ class Simulator(object):
             If an ant dies 1 point is shared equally between its Opponents.
         """
         # maps ants to nearby enemies
-        nearby_enemies = {}
+        cdef dict nearby_enemies = {}
+        cdef _Ant ant
+        cdef list ants_to_kill
+        cdef int weakness
+        cdef _Ant enemy
+        cdef int min_enemy_weakness 
+    
         for ant in self.ants:
             nearby_enemies[ant] = self.nearby_ants(ant, 
                                                    self.attackradius, 
@@ -152,7 +195,7 @@ class Simulator(object):
 
         return ants_to_kill
 
-    def kill(self, ant):
+    cdef void kill(self, _Ant ant):
         self.ants.remove(ant)
 
 
@@ -164,32 +207,46 @@ class Simulator(object):
             s += str(a)
         return s
 
-    def add_ant(self, ant):
+    cdef void add_ant(self, _Ant ant):
         self.ants.append(ant)
 
-    def move_ant(self, ant, newpos):
-        if self.map[newpos] == -4:
-            return False
+    cdef int move_ant(self, _Ant ant, tuple newpos):
+#        cdef np.ndarray[np.int_t, ndim=2, mode="c"] array = self.map
+        cdef int mapvalue = self.map[newpos]
+        if  mapvalue == -4:
+            return 0
         self.movements[ant] = newpos
-        self.next_loc[newpos].append(ant)
-        return True
+        if newpos in self.next_loc:
+            self.next_loc[newpos].append(ant)
+        else:
+            self.next_loc[newpos] = [ant]
+        return 1
   
-    def move_direction(self, ant, d):
-        pos = AIM[d]
-        newpos = ( (ant.pos[0] + pos[0]) % self.rows, 
-                   (ant.pos[1] + pos[1]) % self.cols
+    cdef int move_direction(self, _Ant ant, str d):
+        cdef tuple pos = AIM[d]
+        cdef int i, j
+        i, j = pos
+        cdef tuple newpos = ( (ant.i + i) % self.rows, 
+                   (ant.j + j) % self.cols
                  )
         return self.move_ant(ant, newpos)
 
-    def __really_move(self, ant, newpos):
-        ant.pos = newpos
+    cdef inline void __really_move(self, _Ant ant, int i, int j):
+        ant.i = i
+        ant.j = j
 
-    def finalize_movements(self):
-        killed_ants = []
+    cdef list finalize_movements(self):
+        cdef list killed_ants = []
+        cdef list ants
+        cdef tuple loc
+        cdef _Ant a
+        cdef int i,j
+        
         for loc, ants in self.next_loc.items():
             if len(ants) == 1:
                 a = ants[0]
-                self.__really_move(a, self.movements[a])
+                i, j = self.movements[a]
+                self.__really_move(a, i, j)
             else:
                 for ant in ants:
                     killed_ants.append(ant)
@@ -198,74 +255,106 @@ class Simulator(object):
         self.movements.clear()
         return killed_ants
 
-    def step_turn(self):
-        k1 = self.finalize_movements()
+    cdef list step_turn(self):
+        cdef list k1 = self.finalize_movements()
         return k1 + self.do_attack_focus()
 
-    def count_owner(self, owner):
-        return sum(1 for a in self.ants if a.owner == owner)
+    #TODO CHANGE THIS WHEN SCORE IS A C CLASS
+    cpdef int count_owner(self, int owner):
+        cdef _Ant a
+        cdef int s = 0
+        for a in self.ants:
+            if a.owner == owner:
+                s += 1 
+        return s
+        #return sum(1 for a in self.ants if a.owner == owner)
     
-    def count_enemies(self, owner):
-        return sum(1 for a in self.ants if a.owner != owner)
+    cpdef int count_enemies(self, int owner):
+        cdef _Ant a
+        cdef int s = 0
+        for a in self.ants:
+            if a.owner != owner:
+                s += 1 
+        return s
+        
+        #return sum(1 for a in self.ants if a.owner != owner)
 
-    def ant_owner(self, owner):
+    cdef list ant_owner(self, int owner):
+        cdef _Ant a
         return [a for a in self.ants if a.owner == owner]
 
-    def simulate_combat(self, allowed_time):
-        start = time.time()
-        print "Actions: ", self.actions
-        score_0 = AggresiveScore(self, 0)
-        score_1 = ConservativeScore(self, 1)
+    def simulate_combat(self, float allowed_time,
+                        object ant_0_scoring = ConservativeScore,
+                        object ant_1_scoring = ConservativeScore,
+                        log = None):
+        cdef object time_fn = time.time
+        cdef float start = time_fn()
+
+        cdef object score_0 = ant_0_scoring(self, 0)
+        cdef object score_1 = ant_1_scoring(self, 1)
         
         self.allowed_policies()
-        print "initial policies: ", self.policy
-        init_poses = dict( (a, a.pos) for a in self.ants)
+
+        cdef _Ant a
+        cdef dict init_poses = dict( (a, (a.i, a.j)) for a in self.ants)
         
-        killed = []
-        steps = 0
-        while (time.time() - start) < allowed_time:
+        cdef list killed = []
+        cdef int steps = 0
+
+        cdef dict action
+        cdef _Ant k
+        cdef tuple p
+        cdef _Ant ant
+
+        cdef object ps
+        cdef list pol
+
+        while (time_fn() - start) < allowed_time:
             steps += 1
             action = {}
             for k in killed:
                 self.add_ant(k)
             for a,p in init_poses.iteritems():
-                a.pos = p
+                a.i, a.j = p
             
             for ant in self.ants:
                 ps = dirichlet(self.policy[ant])
                 i = multinomial(1, ps).nonzero()[0][0]
                 if not (self.move_direction(ant, self.actions[i])):
-                    print "CAZZZ"
-                action[ant] = i
+                    #this shouldn't happen, default to no move
+                    action[ant] = 4
+                else:
+                    action[ant] = i
                 
             killed = self.step_turn()
-            for a, p in self.policy.iteritems():
+            for a, pol in self.policy.iteritems():
                 if a.owner == 0:
-                    p[action[a]] += score_0(self)
+                    pol[action[a]] += score_0(self)
                 else:
-                    p[action[a]] += score_1(self)
+                    pol[action[a]] += score_1(self)
 
-        print "Steps: ", steps
         for k in killed:
             self.add_ant(k)
         for a,p in init_poses.iteritems():
-            a.pos = p
+            a.i, a.j = p
         
-        retpolicy = {}
-        print "Raw: ", self.policy
-        for a,p in self.policy.iteritems():
-            ps = dirichlet(p)
+        cdef dict retpolicy = {}
+        for a,pol in self.policy.iteritems():
+            ps = dirichlet(pol)
             i = multinomial(1, ps).nonzero()[0][0]
             retpolicy[a] = self.actions[i]
+        if log is not None:
+            log.info("Number of steps: %d", steps)
         return retpolicy
 
 def test1():
     print "test1"
-    map = np.zeros((10,10))
+    map = np.zeros((10,10), dtype=np.int8)
+    print map.dtype
     sim = Simulator(map)
-    sim.add_ant(Ant((1,1), 1))
-    sim.add_ant(Ant((1,3), 0))
-    sim.add_ant(Ant((2,4), 0))
+    sim.add_ant(Ant(1,1, 1))
+    sim.add_ant(Ant(1,3, 0))
+    sim.add_ant(Ant(2,4, 0))
     print "initial: ", sim
 
     print "Killed: ", sim.step_turn() 
@@ -273,10 +362,10 @@ def test1():
 
 def test2():
     print "test2"
-    map = np.zeros((10,10))
+    map = np.zeros((10,10), dtype = np.int8)
     sim = Simulator(map)
-    a1 = Ant((1,0), 0)
-    a2 = Ant((0,3), 1)
+    a1 = Ant( 1,0 , 0)
+    a2 = Ant( 0,3 , 1)
     sim.add_ant(a1)
     sim.add_ant(a2)
     print "initial: ", sim
@@ -290,10 +379,10 @@ def test2():
 
 def test3():
     print "test3"
-    map = np.zeros((10,10))
+    map = np.zeros((10,10), dtype=np.int8)
     sim = Simulator(map)
-    a1 = Ant((1,0), 0)
-    a2 = Ant((0,1), 0)
+    a1 = Ant(1,0, 0)
+    a2 = Ant(0,1, 0)
     sim.add_ant(a1)
     sim.add_ant(a2)
     print "initial: ", sim
@@ -307,11 +396,11 @@ def test3():
 
 def test4():
     print "test4"
-    map = np.zeros((10,10))
+    map = np.zeros((10,10), dtype=np.int8)
     sim = Simulator(map)
-    sim.add_ant(Ant((1,2), 1))
-    sim.add_ant(Ant((1,3), 0))
-    sim.add_ant(Ant((1,4), 0))
+    sim.add_ant(Ant(1,2, 1))
+    sim.add_ant(Ant(1,3, 0))
+    sim.add_ant(Ant(1,4, 0))
     print "initial: ", sim
 
     print "Killed: ", sim.step_turn() 
@@ -319,13 +408,13 @@ def test4():
 
 def test5():
     print "test5"
-    map = np.zeros((10,10))
+    map = np.zeros((10,10), dtype=np.int8)
     sim = Simulator(map)
-    a1 = Ant((1,1), 1)
+    a1 = Ant(1,1, 1)
     sim.add_ant(a1)
-    a2 = Ant((2,3),0)
+    a2 = Ant(2,3,0)
     sim.add_ant(a2)
-    a3 = Ant((2,4),0)
+    a3 = Ant(2,4,0)
     sim.add_ant(a3)
     print "initial: ", sim
     
@@ -338,11 +427,11 @@ def test5():
 
 def test_ant_cant_move():
     print "test_ant_cant_move"
-    map = np.zeros((10,10))
+    map = np.zeros((10,10), dtype=np.int8)
     map[(1,0)] = -4
     map[(-1,0)] = -4
     sim = Simulator(map)
-    a1 = Ant((0,0),0)
+    a1 = Ant(0,0,0)
     sim.add_ant(a1)
     print "initial: ", sim
     
@@ -360,28 +449,30 @@ def test_ant_cant_move():
 
 def calculate_policy():
     print "policy"
-    map = np.zeros((10,10))
+    map = np.zeros((10,10), dtype=np.int8)
     map[1,0] = -4
     map[0,1] = -4
     sim = Simulator(map)
-    a = Ant((1,1), 1)
+    a = Ant(1,1, 1)
     sim.add_ant(a)
-    a = Ant((2,0), 1)
+    a = Ant(2,0, 1)
     sim.add_ant(a)
-    a = Ant((0,4), 0)
+    a = Ant(0,4, 0)
     sim.add_ant(a)
-    a = Ant((1,4), 0)
+    a = Ant(1,4, 0)
     sim.add_ant(a)
-    a = Ant((2,4), 0)
+    a = Ant(2,4, 0)
     sim.add_ant(a)
-    a = Ant((3,4), 0)
+    a = Ant(3,4, 0)
     sim.add_ant(a)
     print "initial: ", sim
     
-    score_0 = AggresiveScore(sim,0)
-    score_1 = ConservativeScore(sim,1)
+    score_0 = ConservativeScore(sim, 0)
+    score_1 = ConservativeScore(sim, 1)
     
-    policy = sim.simulate_combat(1.0)
+    policy = sim.simulate_combat(5., 
+            score_0.__class__, 
+            score_1.__class__)
 
     #ants = sim.ants
     #policy =  {ants[0]:'-', 
@@ -402,7 +493,7 @@ def calculate_policy():
     print "Score 0: ", score_0(sim)
     print "Score 1: ", score_1(sim)
 
-if __name__ == "__main__":
+def main():
     test1()
     test2()
     test3()
@@ -412,5 +503,8 @@ if __name__ == "__main__":
     print
     print
     start = time.time()
-    calculate_policy()
+    #calculate_policy()
     print "Time: ", time.time() - start
+
+if __name__ == "__main__":
+    main()
