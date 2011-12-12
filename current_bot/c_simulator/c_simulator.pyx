@@ -1,3 +1,4 @@
+# cython: profile=False
 from collections import defaultdict
 import time
 
@@ -14,18 +15,29 @@ cdef dict AIM = {'-': (0, 0),
        's': (1, 0),
        'w': (0, -1)}
 
-class ConservativeScore(object):
-    def __init__(self, simulator, side):
+cdef class Simulator
+
+cdef class Score:
+    cdef float call(self, Simulator simulator):
+        return 0.0
+
+cdef class ConservativeScore(Score):
+    cdef int side
+    cdef int my_init_ants
+    cdef int enemy_init_ants
+
+    def __init__(self, Simulator simulator, int side):
         self.side = side
         self.my_init_ants = simulator.count_owner(self.side)
         self.enemy_init_ants = simulator.count_enemies(self.side)
 
-    def __call__(self, simulator):
-        my_final_ants = simulator.count_owner(self.side)
-        enemy_final_ants = simulator.count_enemies(self.side)
+    cdef float call(self, Simulator simulator):
 
-        delta_my = my_final_ants - self.my_init_ants 
-        delta_enemy = enemy_final_ants - self.enemy_init_ants
+        cdef int my_final_ants = simulator.count_owner(self.side)
+        cdef int enemy_final_ants = simulator.count_enemies(self.side)
+
+        cdef int delta_my = my_final_ants - self.my_init_ants 
+        cdef int delta_enemy = enemy_final_ants - self.enemy_init_ants
 
         if delta_my == 0: #no friend ants died
             if delta_enemy < 0: #too good!
@@ -37,18 +49,47 @@ class ConservativeScore(object):
         else:
             return 0.0
 
-class AggresiveScore(object):
-    def __init__(self, simulator, side):
+cdef class UltraConservativeScore(Score):
+    cdef int side
+    cdef int my_init_ants
+    cdef int enemy_init_ants
+
+    def __init__(self, Simulator simulator, int side):
         self.side = side
         self.my_init_ants = simulator.count_owner(self.side)
         self.enemy_init_ants = simulator.count_enemies(self.side)
 
-    def __call__(self, simulator):
-        my_final_ants = simulator.count_owner(self.side)
-        enemy_final_ants = simulator.count_enemies(self.side)
+    cdef float call(self, Simulator simulator):
 
-        delta_my = my_final_ants - self.my_init_ants 
-        delta_enemy = enemy_final_ants - self.enemy_init_ants
+        cdef int my_final_ants = simulator.count_owner(self.side)
+        cdef int enemy_final_ants = simulator.count_enemies(self.side)
+
+        cdef int delta_my = my_final_ants - self.my_init_ants 
+        cdef int delta_enemy = enemy_final_ants - self.enemy_init_ants
+
+        if delta_my == 0: #no friend ants died
+            if delta_enemy < 0: #too good!
+                return 2.0
+            else:
+                return 1.0
+        else: #I don't want to loose good guys
+            return 0.0
+
+cdef class AggressiveScore(Score):
+    cdef int side
+    cdef int my_init_ants
+    cdef int enemy_init_ants
+    def __init__(self, Simulator simulator, int side):
+        self.side = side
+        self.my_init_ants = simulator.count_owner(self.side)
+        self.enemy_init_ants = simulator.count_enemies(self.side)
+
+    cdef float call(self, Simulator simulator):
+        cdef int my_final_ants = simulator.count_owner(self.side)
+        cdef int enemy_final_ants = simulator.count_enemies(self.side)
+
+        cdef int delta_my = my_final_ants - self.my_init_ants 
+        cdef int delta_enemy = enemy_final_ants - self.enemy_init_ants
 
         if delta_my == 0: #no friend ants died
             if delta_enemy < 0: #too good!
@@ -70,6 +111,9 @@ cdef class _Ant:
     def __repr__(self):
         return str((self.i,self.j)) + ": " + str(self.owner) + " "
 
+    cdef copy(self):
+        return 
+
 cdef _Ant Ant(int i, int j, int owner):
     cdef _Ant instance = _Ant.__new__(_Ant)
     instance.i = i
@@ -82,7 +126,8 @@ cdef inline int int_min(int a, int b): return a if a <= b else b
 cdef inline int int_abs(int a): return a if a >= 0  else -a
 
 cdef class Simulator:
-    
+    #TODO Change two lists of ANTS: enemies and friends
+
     cdef int rows, cols, attackradius
     cdef list ants 
     cdef dict movements, next_loc, policy, friends_mapping
@@ -101,7 +146,7 @@ cdef class Simulator:
         self.actions = ('n','s','e','w','-')
         self.friends_mapping = {}
 
-    cpdef create_from_lists(self, list friends, list enemies):
+    def create_from_lists(self, object friends, object enemies):
         cdef _Ant newa
         cdef tuple e
         for a in friends:
@@ -114,34 +159,31 @@ cdef class Simulator:
 
     cpdef get_friend_policy(self, dict policy):
         cdef dict ret = dict( [ (self.friends_mapping[a], policy[a])
-                      for a in self.ant_owner(0) ] )
+                      for a in self.ant_owner(0)] )
         return ret
 
-    cdef int distance2(self, int row1, int col1, int row2, int col2 ):
+    cdef inline int distance2(self, int row1, int col1, int row2, int col2 ):
         "Calculate the closest squared distance between two locations"
-        cdef int d_col = int_min(int_abs(col1 - col2), self.cols - int_abs(col1 - col2))
-        cdef int d_row = int_min(int_abs(row1 - row2), self.rows - int_abs(row1 - row2))
+        cdef int d_col = int_min(int_abs(col1 - col2), 
+                                 self.cols - int_abs(col1 - col2))
+        cdef int d_row = int_min(int_abs(row1 - row2), 
+                                 self.rows - int_abs(row1 - row2))
         return d_row*d_row + d_col*d_col
     
-    cdef list nearby_ants(self, _Ant ant, int max_dist, int exclude=-1):
-        cdef list enemies = []
+    cdef list nearby_ants(self, _Ant ant, int max_dist, int exclude):
         cdef _Ant e
-        for e in self.ants:
-            if e.owner == exclude:
-                continue
-            #if (ant.pos[0]- e.pos[0])**2 + (ant.pos[1] - e.pos[1])**2 <= max_dist:
-            if self.distance2(ant.i, ant.j, e.i, e.j) <= max_dist:
-                enemies.append(e)
-        return enemies
-
+        return [ e for e in self.ants if (e.owner != exclude) and
+                    self.distance2(ant.i, ant.j, e.i, e.j) <= max_dist
+               ]
+    
     cdef void allowed_policies(self):
         cdef _Ant ant
         cdef list p
         cdef int i
         cdef tuple mov
-        cdef np.ndarray[np.int_t, ndim=2, mode="c"] map = self.map
-        cdef unsigned int r, c
-        cdef unsigned int mov_r, mov_c
+        cdef np.ndarray[np.int8_t, ndim=2, mode="c"] map = self.map
+        cdef int r, c
+        cdef int mov_r, mov_c
 
         for ant in self.ants:
             p = [0,0,0,0,0]
@@ -153,15 +195,18 @@ cdef class Simulator:
                 if map[r,c] != -4:
                     p[i] = 1
             self.policy[ant] = p
+    
+    cdef int min_weakness(self, list this_nearby_enemies, dict nearby_enemies):
+        cdef int m = 1000
+        cdef int l
+
+        for enemy in this_nearby_enemies:
+            l = len(nearby_enemies[enemy])
+            if l < m:
+                m = l
+        return m
 
     cdef list do_attack_focus(self):
-        """ Kill ants which are the most surrounded by enemies
-
-            For a given ant define: Focus = 1/NumOpponents
-            An ant's Opponents are enemy ants which are within the attackradius.
-            Ant alive if its Focus is greater than Focus of any of his Opponents.
-            If an ant dies 1 point is shared equally between its Opponents.
-        """
         # maps ants to nearby enemies
         cdef dict nearby_enemies = {}
         cdef _Ant ant
@@ -177,15 +222,18 @@ cdef class Simulator:
 
         # determine which ants to kill
         ants_to_kill = []
+        cdef list this_nearby_enemies
         for ant in self.ants:
-            # determine this ants weakness (1/focus)
             weakness = len(nearby_enemies[ant])
             # an ant with no enemies nearby can't be attacked
             if weakness == 0:
                 continue
-            # determine the most focused nearby enemy
-            min_enemy_weakness = min([len(nearby_enemies[enemy]) 
-                    for enemy in nearby_enemies[ant]])
+            this_nearby_enemies = nearby_enemies[ant]
+            #min_enemy_weakness = min([len(nearby_enemies[enemy]) 
+            #        for enemy in this_nearby_enemies])
+            min_enemy_weakness = self.min_weakness(this_nearby_enemies,
+                                                   nearby_enemies)
+
             # ant dies if it is weak as or weaker than an enemy weakness
             if min_enemy_weakness <= weakness:
                 ants_to_kill.append(ant)
@@ -257,42 +305,36 @@ cdef class Simulator:
 
     cdef list step_turn(self):
         cdef list k1 = self.finalize_movements()
-        return k1 + self.do_attack_focus()
+        k1.extend(self.do_attack_focus())
+        return k1
 
-    #TODO CHANGE THIS WHEN SCORE IS A C CLASS
-    cpdef int count_owner(self, int owner):
+    cdef int count_owner(self, int owner):
         cdef _Ant a
         cdef int s = 0
         for a in self.ants:
             if a.owner == owner:
-                s += 1 
+                s += 1
         return s
-        #return sum(1 for a in self.ants if a.owner == owner)
-    
-    cpdef int count_enemies(self, int owner):
+
+    cdef int count_enemies(self, int owner):
         cdef _Ant a
         cdef int s = 0
         for a in self.ants:
             if a.owner != owner:
-                s += 1 
+                s += 1
         return s
-        
-        #return sum(1 for a in self.ants if a.owner != owner)
 
     cdef list ant_owner(self, int owner):
         cdef _Ant a
         return [a for a in self.ants if a.owner == owner]
-
-    def simulate_combat(self, float allowed_time,
-                        object ant_0_scoring = ConservativeScore,
-                        object ant_1_scoring = ConservativeScore,
+    
+    def simulate_combat(self, double allowed_time,
+                        Score score_0,
+                        Score score_1,
                         log = None):
         cdef object time_fn = time.time
-        cdef float start = time_fn()
+        cdef double start = time_fn()
 
-        cdef object score_0 = ant_0_scoring(self, 0)
-        cdef object score_1 = ant_1_scoring(self, 1)
-        
         self.allowed_policies()
 
         cdef _Ant a
@@ -309,13 +351,21 @@ cdef class Simulator:
         cdef object ps
         cdef list pol
 
-        while (time_fn() - start) < allowed_time:
+        cdef double curr_time 
+        while True:
+            curr_time = time_fn()
+            if (curr_time - start) >= allowed_time:
+                break
+            
+            
             steps += 1
             action = {}
+            #TODO this can be optimized
             for k in killed:
                 self.add_ant(k)
             for a,p in init_poses.iteritems():
                 a.i, a.j = p
+            
             
             for ant in self.ants:
                 ps = dirichlet(self.policy[ant])
@@ -329,9 +379,9 @@ cdef class Simulator:
             killed = self.step_turn()
             for a, pol in self.policy.iteritems():
                 if a.owner == 0:
-                    pol[action[a]] += score_0(self)
+                    pol[action[a]] += score_0.call(self)
                 else:
-                    pol[action[a]] += score_1(self)
+                    pol[action[a]] += score_1.call(self)
 
         for k in killed:
             self.add_ant(k)
@@ -339,12 +389,27 @@ cdef class Simulator:
             a.i, a.j = p
         
         cdef dict retpolicy = {}
-        for a,pol in self.policy.iteritems():
-            ps = dirichlet(pol)
-            i = multinomial(1, ps).nonzero()[0][0]
-            retpolicy[a] = self.actions[i]
+        cdef int m = 0
+        cdef int index 
+        cdef int val
+        cdef int p_index = 0
+        for a, pol in self.policy.iteritems():
+            #ps = dirichlet(pol)
+            #i = multinomial(1, ps).nonzero()[0][0]
+           
+            m = 0
+            p_index = 0
+            for index in range(5):
+                val = pol[index]
+                if val > m:
+                    m = val
+                    p_index = index
+
+            retpolicy[a] = self.actions[p_index]
         if log is not None:
             log.info("Number of steps: %d", steps)
+        else:
+            print "Number of steps: ", steps
         return retpolicy
 
 def test1():
@@ -467,12 +532,12 @@ def calculate_policy():
     sim.add_ant(a)
     print "initial: ", sim
     
-    score_0 = ConservativeScore(sim, 0)
+    score_0 = AggressiveScore(sim, 0)
     score_1 = ConservativeScore(sim, 1)
     
-    policy = sim.simulate_combat(5., 
-            score_0.__class__, 
-            score_1.__class__)
+    policy = sim.simulate_combat(0.03, 
+            score_0, 
+            score_1)
 
     #ants = sim.ants
     #policy =  {ants[0]:'-', 
@@ -490,8 +555,8 @@ def calculate_policy():
     
     print "killed: ", sim.step_turn()
     print "after: ", sim
-    print "Score 0: ", score_0(sim)
-    print "Score 1: ", score_1(sim)
+    print "Score 0: ", score_0.call(sim)
+    print "Score 1: ", score_1.call(sim)
 
 def main():
     test1()
@@ -503,7 +568,7 @@ def main():
     print
     print
     start = time.time()
-    #calculate_policy()
+    calculate_policy()
     print "Time: ", time.time() - start
 
 if __name__ == "__main__":
