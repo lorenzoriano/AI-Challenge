@@ -22,7 +22,8 @@ UNSEEN = -5
 AIM = {'n': (-1, 0),
        'e': (0, 1),
        's': (1, 0),
-       'w': (0, -1)}
+       'w': (0, -1),
+       '-': [0, 0]}
 RIGHT = {'n': 'e',
          'e': 's',
          's': 'w',
@@ -162,6 +163,7 @@ class Ants():
         self.hill_list.update(visible_hill_list)
 
     def wrap_coords(self, loc):
+        return loc[0] % self.rows, loc[1]%self.cols
         r,c = loc
         if r >= self.rows:
             r = r - self.rows
@@ -175,7 +177,7 @@ class Ants():
 
     def map_value(self, loc):
         loc = self.wrap_coords(loc)
-        return self.map[loc[0], loc[1]]
+        return self.map[loc]
 
     def time_remaining(self):
         return self.turntime - int(1000 * (timingf() - self.turn_start_time))
@@ -228,6 +230,12 @@ class Ants():
         row, col = loc
         return self.map[row,col] not in (WATER, UNSEEN)
     
+    def notwater(self, loc):
+        """
+        True if loc is not water
+        """
+        return self.map_value(loc) != WATER
+
     def unoccupied(self, loc):
         "True if no ants are at the location"
         row, col = loc
