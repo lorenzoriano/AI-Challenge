@@ -196,20 +196,6 @@ class Explorer(singleant.SingleAnt):
             return self.transition("explore_state")
         
         #checking if it can turn into an aggregator
-        hills = self.my_hills(10)
-        if (len(hills) and len(self.enemies) and
-               self.world.distance(self.enemies[0][1], min(hills)[1]) < 
-	           defenders_flock.DefendersFlock.danger_radius) : 
-            #things are harsh, better create a defendersflock
-            self.myhill = min(hills)[1]
-            self.log.info("My hill is at %s, number of enemies is %d",
-                    self.myhill, len(self.enemies))
-            if defenders_flock.create(self, 10, len(self.enemies)):
-                self.log.info("creating a DefendersFlock")
-                return self.transition_delayed("forage_state")
-            else:
-                self.log.info("No DefendersFlock will be created")
-        
         enemies_pos = [e[1] for e in self.enemies]
         if explorers_flock.create(self, self.gathering_radius, 
 		                            enemies_pos):
@@ -222,7 +208,6 @@ class Explorer(singleant.SingleAnt):
         no_zones = set(itertools.chain.from_iterable(
                         drawcircle.can_attack(e[1], self.world.attackradius2)
                         for e in self.enemies))
-        self.log.info("Hot zones are: %s", no_zones)
         choices = (p for p in self.world.neighbours(self.pos)
                     if p not in no_zones)
         for c in choices:
