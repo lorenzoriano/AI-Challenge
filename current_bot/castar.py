@@ -5,8 +5,9 @@ from math import sqrt
 
 astar_m = None
 astar_mat = None
+gworld = None
 
-def add_enemies_surround(mat, world ):
+def __add_enemies_surround(mat, world ):
     """Add a penalty value around the enemies"""
     amat = np.zeros(mat.shape, dtype=bool)
     viewradius = int(sqrt(world.attackradius2))
@@ -35,7 +36,9 @@ def add_enemies_surround(mat, world ):
 def setup(mat, world):
     global astar_mat
     global astar_m
+    global gworld
 
+    gworld = world
     intmat = np.ones(mat.shape, dtype=np.float64)
 
     #Removing water from neighbours
@@ -43,7 +46,7 @@ def setup(mat, world):
     #Increasing the cost of stepping over other ants
     intmat[mat == ants.ANTS] = 4 #the cost of going around is smaller
     
-    add_enemies_surround(intmat, world)
+    #add_enemies_surround(intmat, world)
     
     #filename = "map_"+str(world.turn)+".txt"
     #np.savetxt(filename, intmat)
@@ -67,6 +70,15 @@ def pathfind(start_pos, goal_pos, bot = None, world = None):
         return []
     else:
         return path[1:]
+
+def pathdist(start_pos, goal_pos, d):
+    """
+    Return True if there is path between start_pos and goal_pos whose length is
+    less than d, False otherwise
+    """
+    if gworld.distance(start_pos, goal_pos) > d:
+        return False
+    return 0 < len(pathfind(start_pos, goal_pos)) <= d
 
 def find_near(start_pos, max_cost):
     """
