@@ -7,6 +7,9 @@ import numpy as np
 import MyBot
 ants = MyBot.ants
 import castar
+import itertools
+from math import sqrt
+import drawcircle
 
 logger = logging.getLogger("pezzant.aggregator")
 
@@ -39,6 +42,8 @@ class Aggregator(object):
                 self.bot
                 )
         
+        self.attackradius = int(sqrt(self.world.attackradius2))
+        self.attackradius2 = self.world.attackradius2
         global aggregator_id
         self.id = aggregator_id
         aggregator_id += 1
@@ -54,6 +59,7 @@ class Aggregator(object):
         self.grouping = 0.0
         self.previous_poses = None
         self.current_poses = None
+        self.need_a_step = None
     
     def setup_planner(self, group_state):
         """
@@ -94,6 +100,51 @@ class Aggregator(object):
         ant.aggregator = self
         ant.planner = self.planner
         self.controlled_ants.add(ant)
+        ant.controlled()
+
+    def enemies_in_range(self, r):
+        """
+        Returns an iterator over of all the enemies within range r of all the
+        controlled ants.
+        """
+        world = self.world
+        ant_enemies = itertools.product(self.controlled_ants,
+                                        world.enemy_ants())
+
+        enemies = (e[0] for a,e in ant_enemies 
+                if world.distance(a.pos, e[0]) <= r)
+        return enemies
+
+    def __attack_positions(self, enemies, distance=2):
+        """
+        Returns an iterator of all the poses around each of the enemies such
+        that the distance between a pose and an enemy is attackradius + 
+        distance
+        """
+        gen = itertools.chain.from_iterable(drawcircle.manhattan_fixed_dist(
+                           e,
+                           self.attackradius+distance)
+                                    for e in enemies)
+
+        return itertools.ifilter(self.world.notwater, gen) 
+
+    def attack_positions(self, enemies):
+        gen = itertools.chain.from_iterable(drawcircle.attack_positions(
+                                            e,
+                                            self.world.attackradius2)
+                                    for e in enemies)
+
+        good_poses = map(self.world.wrap_coords, gen)
+        return itertools.ifilter(self.world.notwater, good_poses) 
+
+    def can_attack(self, ant, enemy):
+        """
+        Return True if ant and enemy would be in attack range should any of
+        them move.
+        ant and enemy are two 2-elements tuples
+        """
+        gen = drawcircle.danger_positions(enemy, self.attackradius2)
+        return ant in itertools.imap(self.world.wrap_coords, gen)
 
     def remove_ant(self, ant):
         """
@@ -165,7 +216,8 @@ class Aggregator(object):
         This function has to return True if the aggregator is 
         still alive, False otherwise
         """
-        raise NotImplementedError 
+        self.previous_poses = self.current_poses
+        self.current_poses = [ant.pos for ant in self.controlled_ants]
 
     def step(self, ant):
         """
@@ -188,4 +240,8 @@ class Aggregator(object):
                 return
             self.newturn()
         self.last_turn = self.bot.turn
+        if self.need_a_step is not None:
+            self.log.info("Ant %s needs a step", self.need_a_step)
+            self.need_a_step.step
+            self.need_a_step = None
 

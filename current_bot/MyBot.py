@@ -165,6 +165,10 @@ class PezzBot:
         #adding newborn ants
         self.update_ants()
 
+	#updating the dipatchers
+	for d in self.dispatchers:
+	    d.step()
+	
         #now is time to update the mover
         self.mover.update(self.ants)
 
@@ -183,7 +187,7 @@ class PezzBot:
         
         self.postloop_tracker.tick()
         self.mover.finalize()
-        if profiler is not None and self.turn == 200:
+        if profiler is not None and self.turn == 500:
             profiler.dump_stats("profiler.prof")
             sys.exit()
 
