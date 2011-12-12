@@ -33,10 +33,11 @@ class WarriorDispatcher(object):
         visible_perc = float(visible.sum()) / visible.size
         self.log.info("World visible is %f", visible_perc)
         
-        if visible_perc < 0.6:
-            return 0.0
-        estimated_enemies = 1./visible_perc * number_of_enemies
+        estimated_enemies = (number_of_enemies + 
+                (1. - visible_perc) * number_of_enemies/visible_perc)
         self.log.info("Estimated enemies: %f", estimated_enemies)
+        if visible_perc < 0.5:
+            return 0.0
         if len(self.bot.ants) > estimated_enemies*(len(self.ants)+1):
             self.log.info("OK to make a Warrior")
             return 1.0
@@ -73,3 +74,6 @@ class WarriorDispatcher(object):
         
         self.log.info("Removing ant %s", ant)
         self.ants.remove(ant)
+
+    def step(self):
+        pass
