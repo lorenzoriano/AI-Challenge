@@ -65,3 +65,6 @@ class DefenderDispatcher(object):
         self.assigned_hills.remove(ant.myhill)
         self.log.info("Removing ant %s", ant)
         self.ants.remove(ant)
+
+    def step(self):
+	pass
