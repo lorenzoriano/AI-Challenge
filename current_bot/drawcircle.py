@@ -1,4 +1,5 @@
 from math import sqrt
+import itertools
 
 def circular_poses(x0, y0, radius):
     """
@@ -137,3 +138,56 @@ def __attack_positions(center, attackradius2):
     
     return set( (center[0] + r, center[1] + c) 
             for r,c in offsets)
+
+def gen_variations(center, d_row, d_col):
+    moves = ( (0,0),
+              (-1,0),
+              (1,0),
+              (0,-1),
+              (0,1)
+            )
+
+    d2 = ( ( (d_row+r1)-(center[0]+r2) )**2 + 
+           ( (d_col+c1)-(center[1]+c2) )**2
+            for (r1,c1) in moves for (r2,c2) in moves
+         )
+    return d2
+
+def danger_positions(center, attackradius2,):
+    radius = int(sqrt(attackradius2)) + 2
+  
+    moves = ( (0,0),
+              (-1,0),
+              (1,0),
+              (0,-1),
+              (0,1)
+            )
+    
+    for d_row in xrange(-radius + center[0] , radius+center[0]+1):
+        for d_col in xrange(-radius +center[1], radius+center[1]+1):
+            d2 = ( ( (d_row+r1)-(center[0]+r2) )**2 + 
+                   ( (d_col+c1)-(center[1]+c2) )**2
+                    for (r1,c1) in moves for (r2,c2) in moves
+                 )
+            if any(d <= attackradius2 for d in d2):
+                yield d_row, d_col
+
+def can_attack(center, attackradius2):
+    radius = int(sqrt(attackradius2)) + 2
+  
+    moves = ( (0,0),
+              (-1,0),
+              (1,0),
+              (0,-1),
+              (0,1)
+            )
+    
+    for d_row in xrange(-radius + center[0] , radius+center[0]+1):
+        for d_col in xrange(-radius +center[1], radius+center[1]+1):
+            d2 = ( ( (d_row)-(center[0]+r2) )**2 + 
+                   ( (d_col)-(center[1]+c2) )**2
+                    for (r2,c2) in moves
+                 )
+            if any(d <= attackradius2 for d in d2):
+                yield d_row, d_col
+
