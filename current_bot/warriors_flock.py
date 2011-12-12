@@ -119,7 +119,7 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         """
         super(WarriorsFlock, self).newturn()
         bot = self.leader.bot
-        self.all_enemies = set(self.enemies_in_range(self.danger_radius))
+        self.all_enemies = set(self.ants_enemies_in_range(self.danger_radius))
         self.log.info("Enemies around: %s", self.all_enemies)
         close_enemy = len(self.all_enemies) > 0
 

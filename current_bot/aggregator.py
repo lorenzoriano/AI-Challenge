@@ -102,7 +102,7 @@ class Aggregator(object):
         self.controlled_ants.add(ant)
         ant.controlled()
 
-    def enemies_in_range(self, r):
+    def ants_enemies_in_range(self, r):
         """
         Returns an iterator over of all the enemies within range r of all the
         controlled ants.

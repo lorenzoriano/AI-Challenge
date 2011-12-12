@@ -27,6 +27,7 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         self.all_enemies = set()
         self.positions_assigned = set()
         self.policy = {}
+        self.current_ant = None
 
     def step(self, ant):
         """
@@ -153,7 +154,7 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         except AttributeError:
             self.log.error("WTF??")
             return False
-        self.all_enemies = set(self.enemies_in_range(r))
+        self.all_enemies = set(self.ants_enemies_in_range(r))
         self.log.info("Enemies around: %s", self.all_enemies)
         if len(self.all_enemies) == 0:
             self.log.info("No more enemies in range")
