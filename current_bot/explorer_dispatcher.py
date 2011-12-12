@@ -2,6 +2,8 @@ import explorer
 import logging
 import pezz_logging
 import random
+from math import sqrt
+import castar
 
 logger = logging.getLogger("pezzant.explorer_dispatcher")
 
@@ -12,14 +14,18 @@ class ExplorerDispatcher(object):
     needed.
     """
     def __init__(self, world, bot):
+	#TODO ant a location for each hill
         self.world = world
         self.food_tracking = {}
+        self.allocated_food = set()
         self.bot = bot
         self.ants = []
-        self.food_range = 10
+        self.food_range = int(sqrt(world.viewradius2)) + 1
+        self.food_recall = int(sqrt(world.viewradius2)* 2.0)
         
-        self.locations = [(r,c) for r in xrange(0,world.rows,self.food_range)
-                                  for c in xrange(0,world.cols,self.food_range)]
+        radius = self.food_range
+        self.locations = [(r,c) for r in xrange(radius, world.rows, radius)
+                                  for c in xrange(radius, world.cols, radius)]
         #self.all_locations = locations
         self.available_locations = self.locations[:]
         
@@ -74,6 +80,7 @@ class ExplorerDispatcher(object):
         for k,v in self.food_tracking.iteritems():
             if v == ant:
                 del self.food_tracking[k]
+		self.allocated_food.remove(k)
                 break
 
         #popping back the ant location
@@ -84,7 +91,8 @@ class ExplorerDispatcher(object):
         Checks if the food at loc has already been reserved by
         another ant.
         """
-        return self.food_tracking.has_key(loc)
+	return loc in self.allocated_food
+        #return self.food_tracking.has_key(loc)
 
     def reserve_food(self, loc, ant):
         """
@@ -93,6 +101,7 @@ class ExplorerDispatcher(object):
         """
         if not self.check_food(loc):
             self.food_tracking[loc] = ant
+	    self.allocated_food.add(loc)
             self.log.info("Reserving food @ %s for ant %s", loc, ant)
             return True
         else:
@@ -105,3 +114,7 @@ class ExplorerDispatcher(object):
         if self.food_tracking.has_key(loc):
             self.log.info("Removing food @ %s", loc)
             del self.food_tracking[loc]
+	    self.allocated_food.remove(loc)
+    
+    def step(self):
+        pass
