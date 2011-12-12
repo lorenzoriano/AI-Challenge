@@ -100,7 +100,6 @@ class Simulator(object):
         return d_row**2 + d_col**2
     
     def nearby_ants(self, ant, max_dist, exclude=None):
-        #TODO this does not work at the boundaries!!!
         enemies = []
         for e in self.ants:
             if e.owner == exclude:
@@ -262,6 +261,8 @@ class Simulator(object):
             retpolicy[a] = self.actions[i]
         if log is not None:
             log.info("Number of steps: %d", steps)
+        else:
+            print "Number of steps: ", steps
         return retpolicy
 
 def test1():
@@ -386,7 +387,7 @@ def calculate_policy():
     score_0 = ConservativeScore(sim, 0)
     score_1 = ConservativeScore(sim, 1)
     
-    policy = sim.simulate_combat(5., 
+    policy = sim.simulate_combat(0.5, 
             score_0.__class__, 
             score_1.__class__)
 
