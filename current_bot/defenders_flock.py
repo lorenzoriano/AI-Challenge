@@ -95,7 +95,7 @@ class DefendersFlock(aggregator.Aggregator, fsm.FSM):
         """
 
         world = self.world
-
+	#TODO this has to be from the hill!
         enemies = []
         for e in world.enemy_ants():
             d = world.distance(self.leader.pos, e[0])
@@ -135,10 +135,7 @@ class DefendersFlock(aggregator.Aggregator, fsm.FSM):
                     if
                     type(getattr(a,'aggregator',None)) is not DefendersFlock
                     and 
-                    (0 < 
-                     len(castar.pathfind(self.myhill, a.pos)) 
-                     < self.neighbour_dist
-                    )
+                    castar.pathdist(self.myhill, a.pos, self.neighbour_dist)
                  )
 
         while len(self.controlled_ants) > len(self.close_enemies):
@@ -234,10 +231,7 @@ def create(calling_ant, neighbour_dist, nenemies):
                     if
                     type(getattr(a,'aggregator',None)) is not DefendersFlock
                     and 
-                    (0 < 
-                     len(castar.pathfind(a.pos, myhill)) 
-                     < neighbour_dist
-                    )
+                    castar.pathdist(myhill, a.pos, neighbour_dist)
                  )
     for ant in free_ants:
         ant_list.add(ant)
