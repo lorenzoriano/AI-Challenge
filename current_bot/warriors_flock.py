@@ -6,6 +6,8 @@ import fsm
 import castar
 import warrior
 import defenders_flock
+from c_simulator import c_simulator
+from math import sqrt
 
 class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
     """
@@ -42,8 +44,10 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         self.current_ant = leader
         self.attack_pos = None
         self.neighbour_dist = neighbour_dist
-        self.danger_radius = 1.5 * leader.world.attackradius2
         self.world = leader.world
+        self.danger_radius = 2 + int(sqrt(self.world.attackradius2))
+        self.policy = {}
+        self.all_enemies = set()
 
     def step(self, ant):
         """
@@ -64,6 +68,50 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
                 self.log.info("I don't need %s now", ant)
                 self.remove_ant(ant)
 
+    def calculate_policy(self):
+        """Calculate the policy for all the ants with a close enemy using the
+        simulator
+        """
+        sim = c_simulator.Simulator(self.world.map)
+        policy_ants = set(a for a in self.controlled_ants 
+                if any(self.can_attack(a.pos,e) for e in self.all_enemies) )
+        policy_enemies = set(e for e in self.all_enemies 
+                if any(self.can_attack(a.pos,e) for a in policy_ants) )
+        
+        #policy_ants = [a.pos for a in self.controlled_ants]
+        #policy_enemies  = self.all_enemies
+
+        len_friends = len(policy_ants)
+        len_enemies = len(policy_enemies)
+        if ((len_friends>0) and (len_enemies)>0):
+            self.log.info("Policy ants: %s", policy_ants)
+            self.log.info("Policy enemies: %s", policy_enemies)
+            sim.create_from_lists(policy_ants, policy_enemies)
+            
+            if len_friends > len_enemies:
+                score_0 = c_simulator.AggressiveScore(sim,0)
+                score_1 = c_simulator.ConservativeScore(sim,1)
+            elif len_friends == len_enemies:
+                score_0 = c_simulator.UltraConservativeScore(sim,0)
+                score_1 = c_simulator.ConservativeScore(sim,1)
+            else:
+                score_0 = c_simulator.UltraConservativeScore(sim,0)
+                score_1 = c_simulator.AggressiveScore(sim,1)
+
+            res = sim.simulate_combat(0.03,
+                    score_0,
+                    score_1,
+                    self.log)
+            self.policy = sim.get_friend_policy(res) 
+            self.log.info("Policy: %s", self.policy)
+        else :
+            self.log.info("No policy will be calculated!")
+            self.log.info("Policy ants: %s", policy_ants)
+            self.log.info("Policy enemies: %s", policy_enemies)
+            self.setup_planner(True)
+            self.policy = {}
+
+
     def newturn(self):
         """
         Calculates the centroid and grouping of all the ants. Add ants to
@@ -71,27 +119,31 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         """
         super(WarriorsFlock, self).newturn()
         bot = self.leader.bot
-        close_enemy = any(a.enemy_in_range(self.danger_radius)
-                for a in self.controlled_ants)
-        
+        self.all_enemies = set(self.enemies_in_range(self.danger_radius))
+        self.log.info("Enemies around: %s", self.all_enemies)
+        close_enemy = len(self.all_enemies) > 0
+
         #the enemy hill is closer than the home hill
         ehill_d = self.world.distance(self.leader.pos, self.attack_pos)
-        mhill_d = self.world.distance(self.leader.pos, 
-                min(self.leader.my_hills())[1])
+
+        mhill_l = self.leader.my_hills()
+        if len(mhill_l) == 0: #strange things happen with ants_numpy
+            mhill_d = 0
+        else:
+            mhill_d = min(mhill_l)[1]
+
         if (ehill_d < mhill_d):
-            self.log.info("The hill is close, copting")
+            self.log.info("The enemy hill is close, copting")
             antlist = bot.ants
         else:
-            self.log.info("The hills is not close, not copting")
+            self.log.info("The enemy hills is not close, not copting")
             antlist = []
         
         copted_ants = (a for a in antlist
-                    if self.check_if_grab(a) and 
-                    (0 < 
-                     len(castar.pathfind(self.leader.pos, a.pos)) 
-                     < self.neighbour_dist
-                    )
-                 )
+                       if self.check_if_grab(a) and 
+                       castar.pathdist(self.leader.pos, a.pos, 
+                                       self.neighbour_dist)
+                      )
         
         for ant in copted_ants:
             if len(self.controlled_ants) >= self.max_ants:
@@ -102,17 +154,12 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         self.calculate_grouping()
         
         #transitions
-        if self.previous_poses == self.current_poses:
-            self.log.info("Ants didn't move, stepping out of grouping")
-            self.setup_planner(False)
-            return self.transition_delayed("attack")
-        elif ( (close_enemy or self.state=="group") 
-                and (self.grouping > self.clustering_std)):
-            self.log.info("Enemies nearby, regrouping")
-            self.log.info("Grouping value is: ", self.grouping)
-            self.log.info("Ants pos are: ", self.current_poses)
-            self.setup_planner(True)
-            return self.transition_delayed("group")
+        if close_enemy:
+            self.calculate_policy()
+            self.log.info("Moving all the ants with a policy")
+            for ant, d in self.policy.iteritems():
+                ant.move_heading(d)
+            self.transition_delayed("follow_policy")
         else:
             self.log.info("I can move freely towards the target %s", 
                     self.attack_pos)
@@ -146,14 +193,15 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         self.attack_pos = min(hills_dists)[1]
 
         return True
-
-    def group(self):
-        """
-        Moves all the ants towards the current centroid. 
-        """
-
-        self.log.info("moving ant %s towards the centre", self.current_ant)
-        self.current_ant.move_to(self.centroid)
+    
+    def follow_policy(self):
+        ant = self.current_ant
+        if ant not in self.policy:
+            e_dist = ((self.world.distance(ant.pos,e), e)
+                      for e in self.all_enemies)
+            e = min(e_dist)[1]
+            self.log.info("Ant %s moves towards enemy %s", ant, e)
+            ant.move_to(e)
 
     def attack(self):
         """
@@ -169,13 +217,12 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         """
         Return true if it can grab an ant
         """
-        if getattr(ant, "aggregator", None) is defenders_flock.DefendersFlock:
+        if type(getattr(ant, "aggregator", None)) is defenders_flock.DefendersFlock:
             return False
-        if getattr(ant, "aggregator", None) is WarriorsFlock:
+        if type(getattr(ant, "aggregator", None)) is WarriorsFlock:
             return False
         else:
             return True
-
 
 def create(calling_ant, neighbour_dist):
     """
@@ -187,10 +234,7 @@ def create(calling_ant, neighbour_dist):
     free_ants = (a for a in bot.ants
                     if WarriorsFlock.check_if_grab(a) and
                     type(a) is warrior.Warrior and
-                    (0 < 
-                     len(castar.pathfind(calling_ant.pos, a.pos)) 
-                     < neighbour_dist
-                    )
+                    castar.pathdist(calling_ant.pos, a.pos, neighbour_dist)
                  )
     for ant in free_ants:
         if len(ant_list) >= WarriorsFlock.max_ants:
