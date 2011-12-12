@@ -1,11 +1,10 @@
 import aggregator
 import fsm
 import castar
-import defender
 import heapq
-import random
 import MyBot
 ants = MyBot.ants
+from c_simulator import c_simulator
 
 
 class DefendersFlock(aggregator.Aggregator, fsm.FSM):
@@ -15,53 +14,18 @@ class DefendersFlock(aggregator.Aggregator, fsm.FSM):
     """
     clustering_std = 1.0
     danger_radius = 15
-    very_danger_radius = 10
-    flocks_location = set()
 
-    def __init__(self, leader, antlist, neighbour_dist):
+    def __init__(self, leader, antlist, myhill, dispatcher):
         aggregator.Aggregator.__init__(self, leader, antlist)
-        fsm.FSM.__init__(self, "group")
-        self.centroid = None
-        self.attack_pos = None
-        self.neighbour_dist = neighbour_dist
-        self.world = leader.world
-        self.myhill = leader.myhill
-        self.bot = leader.bot
-        self.close_enemy = None
-        self.current_ant = leader
+        fsm.FSM.__init__(self, "follow_policy")
+        self.myhill = myhill
+        self.dispatcher = dispatcher
         self.close_enemies = []
-  
-        DefendersFlock.flocks_location.add(self.myhill)
-        self.log.info("Flocks locations: %s", self.flocks_location)
-
-        r,c = self.myhill
-        world = self.bot.world
-        self.ants_associations = {}
-       
-        #I know this is ugly
-        gr, gc = r + 1, c
-        if world.map[gr,gc] != ants.WATER:
-            self.grouping_goal = gr, gc
-            self.log.info("grouping goal is %s", self.grouping_goal)
-            return
-        gr, gc = r - 1, c
-        if world.map[gr,gc] != ants.WATER:
-            self.grouping_goal = gr, gc
-            self.log.info("grouping goal is %s", self.grouping_goal)
-            return
-        gr, gc = r, c + 1
-        if world.map[gr,gc] != ants.WATER:
-            self.grouping_goal = gr, gc
-            self.log.info("grouping goal is %s", self.grouping_goal)
-            return
-        gr, gc = r, c - 1
-        if world.map[gr,gc] != ants.WATER:
-            self.grouping_goal = gr, gc
-            self.log.info("grouping goal is %s", self.grouping_goal)
-            return
-
+        self.policy = {}
+        self.current_ant = None
+      
     def destroy(self):
-        DefendersFlock.flocks_location.remove(self.myhill)
+        self.dispatcher.remove_hill(self.myhill)
         super(DefendersFlock,self).destroy()
 
     def step(self, ant):
@@ -81,51 +45,23 @@ class DefendersFlock(aggregator.Aggregator, fsm.FSM):
         """
         if len(self.controlled_ants) == 0:
             return False
-        self.close_enemies = self.enemies_in_range(self.danger_radius)
+        self.close_enemies = self.enemies_in_range()
         if len(self.close_enemies):
-            self.close_enemy = self.close_enemies[0][1]
             return True
         else:
             return False
 
-    def enemies_in_range(self, r):
+    def enemies_in_range(self):
         """
-        Returns an ordered list of (dist, location) of all the enemy 
-        locations whose distance from the leader is <= r
+        Returns a list of all the enemies whose distance from the hill is
+        less than self.danger_radius.
         """
 
-        world = self.world
-	#TODO this has to be from the hill!
-        enemies = []
-        for e in world.enemy_ants():
-            d = world.distance(self.leader.pos, e[0])
-            if d <= r:
-                heapq.heappush(enemies,(d,e[0]) )
-
+        enemies = list( e[0] for e in self.world.enemy_ants()
+                        if castar.pathdist(e[0], self.myhill, 
+                            self.danger_radius))
         return enemies
    
-    def associate_ants(self):
-        """
-        For each ant in the group, associate the closest (without replacement)
-        enemy ant.
-        """
-        self.ants_associations.clear()
-        enemy_list = set(e[1] for e in self.close_enemies)
-        world = self.world
-        for ant in self.controlled_ants:
-            if len(enemy_list) == 0:
-                self.log.error("we have more ants than enemies")
-                break
-            close_enemy = min((world.distance(ant.pos, e),e)
-                    for e in enemy_list)[1]
-            self.log.info("Associating ant %s with enemy %s", ant, close_enemy)
-            self.ants_associations[ant] = close_enemy
-            enemy_list.remove(close_enemy)
-
-        if len(self.ants_associations) < len(self.controlled_ants):
-            self.log.error("There are more enemies than ants!")
-
-
     def newturn(self):
         """
         Add ants to this group.
@@ -135,108 +71,74 @@ class DefendersFlock(aggregator.Aggregator, fsm.FSM):
                     if
                     type(getattr(a,'aggregator',None)) is not DefendersFlock
                     and 
-                    castar.pathdist(self.myhill, a.pos, self.neighbour_dist)
+                    castar.pathdist(self.myhill, a.pos, self.danger_radius)
                  )
-
-        while len(self.controlled_ants) > len(self.close_enemies):
-            ant_to_remove = random.choice(list(self.controlled_ants))
-            self.log.info("The enemies are fewer, freeing ant %s",
-                    ant_to_remove)
-            self.remove_ant(ant_to_remove)
-
-        for ant in copted_ants:
-            if len(self.controlled_ants) >= len(self.close_enemies):
-                break
-            self.control(ant)
+        
+        if len(self.controlled_ants) < len(self.close_enemies):
+            #TODO this can be nicely done with an iterator
+            for ant in copted_ants:
+                if len(self.controlled_ants) >= len(self.close_enemies):
+                    break
+                self.control(ant)
 
         #doing this before would be useless
         super(DefendersFlock, self).newturn()
-        self.calculate_grouping()
        
-        self.setup_planner(True)
-        self.associate_ants()
-        self.transition_delayed("kamikaze")
-        return
+        sim = c_simulator.Simulator(self.world.map)
+        policy_ants = set(a for a in self.controlled_ants 
+                if any(self.can_attack(a.pos,e) for e in self.close_enemies) )
+        policy_enemies = set(e for e in self.close_enemies 
+                if any(self.can_attack(a.pos,e) for a in policy_ants) )
+        len_friends = len(policy_ants)
+        len_enemies = len(policy_enemies)
+        if ((len_friends>0) and (len_enemies)>0):
+            self.log.info("Policy ants: %s", policy_ants)
+            self.log.info("Policy enemies: %s", policy_enemies)
+            sim.create_from_lists(policy_ants, policy_enemies)
+            score_0 = c_simulator.UltraConservativeScore(sim,0)
+            score_1 = c_simulator.AggressiveScore(sim,1)
+            res = sim.simulate_combat(0.03,
+                    score_0,
+                    score_1,
+                    self.log)
+            self.policy = sim.get_friend_policy(res) 
+            self.log.info("Policy: %s", self.policy)
+        else :
+            self.log.info("No policy will be calculated!")
+            self.log.info("Policy ants: %s", policy_ants)
+            self.log.info("Policy enemies: %s", policy_enemies)
+            self.setup_planner(True)
+            self.policy = {}
         
-        #checking for clear danger
-        if self.close_enemy <= self.very_danger_radius:
-            self.log.warning("enemies at the door!!")
-            self.transition_delayed("very_danger")
-            return
+        self.log.info("Moving all the ants with a policy")
+        for ant, d in self.policy.iteritems():
+            ant.move_heading(d)
 
-        if self.world.distance(self.centroid, self.myhill) > self.danger_radius/2.:
-            #we don't want to get to far from home
-            self.setup_planner(True)
-            return self.transition_delayed("homing")
-        elif (self.grouping > self.clustering_std and 
-                self.previous_poses != self.current_poses):
-            self.setup_planner(True)
-            return self.transition_delayed("group")
-        else:
-            self.setup_planner(False)
-            return self.transition_delayed("attacking")
+        self.transition_delayed("follow_policy")
 
-    def kamikaze(self):
-        """
-        Move each ant towards the associated enemy
-        """
-        try:
-            enemy = self.ants_associations[self.current_ant]
-        except KeyError:
-            self.log.info("Ant %s has no associated enemy!", self.current_ant)
-            return
+    def follow_policy(self):
+        ant = self.current_ant
+        if ant not in self.policy:
+            e_dist = ((self.world.distance(ant.pos,e), e)
+                      for e in self.close_enemies)
+            e = min(e_dist)[1]
+            self.log.info("Ant %s moves towards enemy %s", ant, e)
+            ant.move_to(e)
 
-        self.current_ant.move_to(enemy)
 
-    def homing(self):
-        """
-        Moves the ant towards the hill
-        """
-        self.current_ant.move_to(self.myhill)
-
-    def group(self):
-        """
-        Groups the ants
-        """
-        self.current_ant.move_to(self.grouping_goal)
-
-    def attacking(self):
-        """
-        Attacks the closest enemy
-        """
-        target = self.close_enemy
-        self.current_ant.move_to(target)
-
-    def very_danger(self):
-        """
-        Move the ant towards the hill
-        """
-        #TODO use a spiral distribution
-        self.current_ant.move_to(self.myhill)
-
-def create(calling_ant, neighbour_dist, nenemies):
+def create(bot, hill, enemies, dispatcher):
     """
-    Create a new DefendersFlock made by at most nememies ants within
-    neighbour_dist of the hill.
+    Create a new DefendersFlock made by the len(enemies) ants 
+    closer to the enemies.
     """
-    myhill = calling_ant.myhill
-    global flocks_location
-    if myhill in DefendersFlock.flocks_location:
-        calling_ant.log.info("Flocks location: %s", 
-                DefendersFlock.flocks_location)
-        return False
-    ant_list = set([calling_ant])
-    bot = calling_ant.bot
-    free_ants = (a for a in bot.ants
-                    if
-                    type(getattr(a,'aggregator',None)) is not DefendersFlock
-                    and 
-                    castar.pathdist(myhill, a.pos, neighbour_dist)
-                 )
-    for ant in free_ants:
-        ant_list.add(ant)
-        if len(ant_list) >= nenemies:
-            break
-    
-    DefendersFlock(calling_ant, ant_list, neighbour_dist)
-    return True
+    def key_func(a):
+        f = bot.world.distance
+        return min(f(a.pos, e) for e in enemies)
+
+    n = len(enemies)
+    ant_list = heapq.nsmallest(n, bot.ants, key_func)
+    if len(ant_list):
+        return DefendersFlock(ant_list[0], ant_list, hill, dispatcher)
+    else:
+        return None
+        
