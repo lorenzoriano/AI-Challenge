@@ -124,21 +124,6 @@ def attack_positions(center, attackradius2, manh_range=(3,5)):
     return set( (center[0] + r, center[1] + c) 
             for r,c in offsets)
 
-def __attack_positions(center, attackradius2):
-    radius = int(sqrt(attackradius2)) + 2
-    offsets = []
-    
-    for d_row in xrange(-radius , radius+1):
-        for d_col in xrange(-radius , radius+1):
-            dm = abs(d_row) + abs(d_col)
-            d2 = (d_row)**2 + (d_col)**2
-                 
-            if (4 == dm) and d2 > attackradius2:
-                offsets.append( (d_row, d_col) )
-    
-    return set( (center[0] + r, center[1] + c) 
-            for r,c in offsets)
-
 def gen_variations(center, d_row, d_col):
     moves = ( (0,0),
               (-1,0),
@@ -154,6 +139,10 @@ def gen_variations(center, d_row, d_col):
     return d2
 
 def danger_positions(center, attackradius2,):
+    """
+    Returns an iterator over all the squares that center would attack if it
+    moves and a nearby ant moves too.
+    """
     radius = int(sqrt(attackradius2)) + 2
   
     moves = ( (0,0),
@@ -173,6 +162,8 @@ def danger_positions(center, attackradius2,):
                 yield d_row, d_col
 
 def can_attack(center, attackradius2):
+    """returns an interator over all the poses that center can attack if it
+    moves"""
     radius = int(sqrt(attackradius2)) + 2
   
     moves = ( (0,0),
@@ -190,4 +181,3 @@ def can_attack(center, attackradius2):
                  )
             if any(d <= attackradius2 for d in d2):
                 yield d_row, d_col
-
