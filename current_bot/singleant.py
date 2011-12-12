@@ -33,7 +33,7 @@ class SingleAnt(FSM):
         self.mover = bot.mover
         self.plan_cache = {}
         self.plan_cache_age = 0
-        self.max_cache_age = 0
+        self.max_cache_age = 10
         self.current_heading = 'n'
         self.planner = castar
 
@@ -157,10 +157,7 @@ class SingleAnt(FSM):
                 i = plan.index(self.pos)
             except ValueError:
                 i = -1;
-            if i < 0:
-                self.log.info("My pos is not in the plan %s", plan)
-            else:
-                self.log.info("location %s already in cache", loc)
+            if i >= 0:
                 self.plan_cache_age += 1
                 #return the path from the next position on
                 return plan[i+1:]
@@ -221,15 +218,15 @@ class SingleAnt(FSM):
         world = self.world
         food = []
         for f in world.food():
-            d = world.distance(self.pos, f)
-            if d <= r:
+            d = castar.pathdist(self.pos, f, r)
+            if 0 < d <= r:
                 heapq.heappush(food, (d,f) )
 
         return food
 
     def enemy_in_range(self, r):
         """
-        Returns True if an enemy is less than r distant from the ant.
+        Returns True if the distance from an enemy is less or equal to r.
         """
 
         world = self.world
@@ -275,7 +272,7 @@ class SingleAnt(FSM):
     def my_hills(self, r=1000):
         """
         Returns a NON-ordered list of (dist, location) of all the enemy 
-        locations whose distance is <= r
+        hills whose distance is <= r
         """
 
         world = self.world
@@ -286,4 +283,13 @@ class SingleAnt(FSM):
             if d <= r:
                 my_hills.append((d,loc) )
 
+        if len(my_hills) == 0:
+            self.log.error("No close hills? World says %s", self.world.my_hills())
         return my_hills
+
+
+    def controlled(self):
+	"""
+	This method is called when an aggregator takes control of an ant.
+	"""
+	pass
