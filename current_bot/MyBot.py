@@ -165,9 +165,9 @@ class PezzBot:
         #adding newborn ants
         self.update_ants()
 
-	#updating the dipatchers
-	for d in self.dispatchers:
-	    d.step()
+        #updating the dipatchers
+        for d in self.dispatchers:
+            d.step()
 	
         #now is time to update the mover
         self.mover.update(self.ants)
@@ -191,10 +191,9 @@ class PezzBot:
             profiler.dump_stats("profiler.prof")
             sys.exit()
 
+        
+        self.log.info("number of my hills: %d", len(self.world.my_hills()))
         self.log.info("number of enemy hills: %d", len(self.enemy_hills))
-        for h in self.enemy_hills:
-            self.log.info("Enemy hill at %s, map shows %d", h, 
-                    world.map_value(h))
         self.log.info("number of explorer: %d", len(self.explorer_dispatcher.ants))
         self.log.info("number of warrior: %d", len(self.warrior_dispatcher.ants))
         self.log.info("number of defender: %d", len(self.defender_dispatcher.ants))
