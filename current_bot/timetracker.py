@@ -16,7 +16,8 @@ class TimeTracker(object):
         self.tick_time = timingf()
 
     def tock(self):
-        elapsed = timingf() - self.tick_time
+        elapsed = timingf()*1000. - self.tick_time*1000.
+        return elapsed
         self.recorded_times.append(elapsed)
         return int(numpy.mean(self.recorded_times) * 1000)
 

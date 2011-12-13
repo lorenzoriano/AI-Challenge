@@ -92,13 +92,14 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
                 score_0 = c_simulator.AggressiveScore(sim,0)
                 score_1 = c_simulator.ConservativeScore(sim,1)
             elif len_friends == len_enemies:
-                score_0 = c_simulator.UltraConservativeScore(sim,0)
+                score_0 = c_simulator.AggressiveScore(sim,0)
                 score_1 = c_simulator.ConservativeScore(sim,1)
             else:
-                score_0 = c_simulator.UltraConservativeScore(sim,0)
+                score_0 = c_simulator.ConservativeScore(sim,0)
                 score_1 = c_simulator.AggressiveScore(sim,1)
 
-            res = sim.simulate_combat(0.03,
+            t = self.calculate_time_per_policy()
+            res = sim.simulate_combat(t,
                     score_0,
                     score_1,
                     self.log)

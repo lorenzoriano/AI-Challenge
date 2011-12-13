@@ -60,7 +60,9 @@ class Aggregator(object):
         self.previous_poses = None
         self.current_poses = None
         self.need_a_step = None
-    
+   
+        self.bot.add_aggregator(self)
+
     def setup_planner(self, group_state):
         """
         Setup the planner with a new matrix.
@@ -202,6 +204,22 @@ class Aggregator(object):
         for ant in self.controlled_ants.copy():
             self.remove_ant(ant)
         self.controlled_ants.clear()
+        self.bot.remove_aggregator(self)
+
+    def calculate_time_per_policy(self):
+        #return 0.03
+        bot = self.bot
+        time_remaining = self.world.time_remaining() - 2*bot.postloop_time
+        nants = len(bot.ants) - bot.executed_ants
+        tot_ants_time = nants * bot.average_ant_time
+        num_aggregators = len(bot.aggregators) - bot.executed_aggregators + 1
+
+        time_for_aggregators = (time_remaining - tot_ants_time) / num_aggregators
+        bot.aggregators_times.append(time_for_aggregators)
+        time_for_policy = time_for_aggregators * 0.8 / 1000.
+        self.log.info("Policy time: %f", time_for_policy)
+        self.log.info("Locals: %s", locals())
+        return time_for_policy
 
     def newturn(self):
         """
@@ -210,6 +228,7 @@ class Aggregator(object):
         """
         self.previous_poses = self.current_poses
         self.current_poses = [ant.pos for ant in self.controlled_ants]
+        self.bot.executed_aggregators += 1
 
     def check_status(self):
         """

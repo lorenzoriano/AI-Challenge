@@ -53,6 +53,12 @@ class PezzBot:
                 )
         self.enemy_hills = set()
         self.unseen = set()
+        self.aggregators = set()
+        self.executed_aggregators = 0
+        self.postloop_time = 10.
+        self.average_ant_time = 10.
+        self.executed_ants = 0
+        self.aggregators_times = []
         
     # do_setup is run once at the start of the game
     # after the bot has received the game settings
@@ -132,6 +138,12 @@ class PezzBot:
                 return ant
         return None
 
+    def add_aggregator(self, aggr):
+        self.aggregators.add(aggr)
+
+    def remove_aggregator(self, aggr):
+        self.aggregators.discard(aggr)
+
     # do turn is run once per turn
     def do_turn(self, world):
         self.preloop_tracker.tick()
@@ -139,6 +151,9 @@ class PezzBot:
         self.log.info("Start turn")
         castar.setup(world.map, world)
         self.turn += 1
+        self.executed_aggregators = 0
+        self.executed_ants = 0
+        self.aggregators_times = []
 
         #adding enemy hills
         for hill_loc, hill_owner in world.enemy_hills():
@@ -176,15 +191,19 @@ class PezzBot:
         random.shuffle(iter_ants)
         preloop_time = self.preloop_tracker.tock()
         ants_time = 0.
+        self.ants_tracker.tick()
         for ant_number, ant in enumerate(iter_ants):
-            self.ants_tracker.tick()
             ant.step()
-            ants_time += self.ants_tracker.tock()
-
-            if world.time_remaining() < 50:
+            
+            self.executed_ants += 1
+            
+            if world.time_remaining() < 2*self.postloop_time:
                 self.log.warning("Timeout incoming, bail out!")
                 break
         
+        ants_time += self.ants_tracker.tock() - sum(self.aggregators_times)
+        if ants_time <= 0:
+            ants_time = 1.0
         self.postloop_tracker.tick()
         self.mover.finalize()
         if profiler is not None and self.turn == 500:
@@ -203,8 +222,13 @@ class PezzBot:
         self.preloop_tracker.reset()
         self.postloop_tracker.reset()
 
+        self.postloop_time = postloop_time
+        self.average_ant_time = ants_time / len(self.ants)
+        if self.average_ant_time == 0:
+            self.average_ant_time = 1.0 / len(self.ants)
+        
         self.log.info("Preloop average time: %f", preloop_time)
-        self.log.info("Ants average time: %f", ants_time)
+        self.log.info("Ants total time: %f", ants_time)
         self.log.info("Postloop average time: %f", postloop_time)
         self.log.info("Time remaining: %f", world.time_remaining())
 

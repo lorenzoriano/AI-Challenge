@@ -67,8 +67,9 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
             else:
                 score_0 = c_simulator.UltraConservativeScore(sim,0)
                 score_1 = c_simulator.AggressiveScore(sim,1)
-
-            res = sim.simulate_combat(0.03,
+            
+            t = self.calculate_time_per_policy()
+            res = sim.simulate_combat(t,
                     score_0,
                     score_1,
                     self.log)

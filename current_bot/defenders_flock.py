@@ -67,6 +67,7 @@ class DefendersFlock(aggregator.Aggregator, fsm.FSM):
         Add ants to this group.
         This function changes the state of the whole flock
         """
+        super(DefendersFlock, self).newturn()
         copted_ants = (a for a in self.bot.ants
                     if
                     type(getattr(a,'aggregator',None)) is not DefendersFlock
@@ -80,9 +81,6 @@ class DefendersFlock(aggregator.Aggregator, fsm.FSM):
                 if len(self.controlled_ants) >= len(self.close_enemies):
                     break
                 self.control(ant)
-
-        #doing this before would be useless
-        super(DefendersFlock, self).newturn()
        
         sim = c_simulator.Simulator(self.world.map)
         policy_ants = set(a for a in self.controlled_ants 
@@ -97,7 +95,8 @@ class DefendersFlock(aggregator.Aggregator, fsm.FSM):
             sim.create_from_lists(policy_ants, policy_enemies)
             score_0 = c_simulator.UltraConservativeScore(sim,0)
             score_1 = c_simulator.AggressiveScore(sim,1)
-            res = sim.simulate_combat(0.03,
+            t = self.calculate_time_per_policy()
+            res = sim.simulate_combat(t,
                     score_0,
                     score_1,
                     self.log)
