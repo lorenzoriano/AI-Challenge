@@ -4,6 +4,7 @@ import pezz_logging
 import random
 from math import sqrt
 import castar
+import itertools
 
 logger = logging.getLogger("pezzant.explorer_dispatcher")
 
@@ -20,8 +21,7 @@ class ExplorerDispatcher(object):
         self.allocated_food = set()
         self.bot = bot
         self.ants = []
-        self.food_range = int(sqrt(world.viewradius2)) + 1
-        self.food_recall = int(sqrt(world.viewradius2)* 2.0)
+        self.food_range = 2*int(sqrt(world.viewradius2)) + 1
         
         radius = self.food_range
         self.locations = [(r,c) for r in xrange(radius, world.rows, radius)
@@ -45,11 +45,10 @@ class ExplorerDispatcher(object):
         """
         return float(len(self.available_locations)) /  (10+len(self.locations))
 
-
-    def create_ant(self, loc):
+    def random_location(self):
         """
-        Create an Explorer ant if needed.
-        Returns the new ant if it has been created, None otherwise    
+        Generate a random location based on the previously equally spaced grid.
+        If there are no available locations, a random one is generated.
         """
         if len(self.available_locations) == 0:
             self.log.info("Explorer to random location")
@@ -60,6 +59,41 @@ class ExplorerDispatcher(object):
             i = random.randrange(len(self.available_locations))
             ant_loc = self.available_locations.pop(i)
 
+        return ant_loc
+
+    def give_me_new_loc(self, ant):
+        """
+        Assign a new location to ant. The new location is chosen to be the
+        closest to ant. Unseen locations are given priority.
+        """
+        locs = itertools.ifilterfalse(self.world.cell_visible,
+                                      self.available_locations)
+
+        def keyfun(loc):
+            l = len(castar.pathfind(ant.pos, loc))
+            if l:
+                return l
+            else:
+                raise ValueError
+
+        try:
+            newloc = min(locs, key=keyfun)
+        except ValueError:
+            #no more not visible locations
+            return ant.area_loc
+
+        self.available_locations.remove(newloc)
+        self.available_locations.append(ant.area_loc)
+        self.log.info("Assigning new location %s to ant %s",newloc, ant)
+
+        return newloc
+
+    def create_ant(self, loc):
+        """
+        Create an Explorer ant if needed.
+        Returns the new ant if it has been created, None otherwise    
+        """
+        ant_loc = self.random_location() 
         newant = explorer.Explorer(loc, self.bot, self.world, self,
                                   ant_loc, self.food_range)
         self.ants.append(newant)

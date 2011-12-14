@@ -23,7 +23,6 @@ class Explorer(singleant.SingleAnt):
         
         self.goal_pos = None
         self.danger_radius = 3 + int(sqrt(world.attackradius2))
-        #self.danger_radius = 1.5 * world.attackradius2
         self.dispatcher = dispatcher
         self.area_loc = area_loc
         self.food_gather_range = food_range
@@ -83,14 +82,14 @@ class Explorer(singleant.SingleAnt):
 
     def check_if_run(self, enemy_loc, food_loc=None):
         """
-        An ant will run from an enemy unless it's close to its hill or if food
-        is closer.
+        An ant will run from an enemy unless it's closer to the food than the
+        enemy.
         """
         world = self.world
         mypos = self.pos
         if food_loc is None:
             return True
-        if world.distance(mypos, food_loc) < world.distance(mypos,enemy_loc):
+        if world.distance(mypos, food_loc) <= world.distance(food_loc,enemy_loc):
             return False
         return True
 
@@ -110,7 +109,15 @@ class Explorer(singleant.SingleAnt):
             return self.transition("forage_state")
 
         #generating a random goal
-        self.goal_pos = self.generate_random_goal()
+        oldloc = self.area_loc
+        newloc = self.dispatcher.give_me_new_loc(self)
+        if oldloc == newloc:
+            self.log.warning("Didn't get any new loc!")
+            self.goal_pos = self.generate_random_goal()
+        else:
+            self.area_loc = newloc
+            self.log.info("Got new loc: %s", newloc)
+            self.goal_pos = newloc
         return self.transition("moving_state")
 
     def moving_state(self):
