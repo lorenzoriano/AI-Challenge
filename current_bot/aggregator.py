@@ -214,9 +214,10 @@ class Aggregator(object):
         tot_ants_time = nants * bot.average_ant_time
         num_aggregators = len(bot.aggregators) - bot.executed_aggregators + 1
 
-        time_for_aggregators = (time_remaining - tot_ants_time) / num_aggregators
-        bot.aggregators_times.append(time_for_aggregators)
-        time_for_policy = time_for_aggregators * 0.8 / 1000.
+        time_for_aggregators = 0.8*(time_remaining - tot_ants_time) / num_aggregators
+        if time_for_aggregators > 0:
+            bot.aggregators_times.append(time_for_aggregators)
+        time_for_policy = time_for_aggregators / 1000.
         self.log.info("Policy time: %f", time_for_policy)
         self.log.info("Locals: %s", locals())
         return time_for_policy
