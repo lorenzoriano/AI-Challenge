@@ -96,18 +96,23 @@ class DefendersFlock(aggregator.Aggregator, fsm.FSM):
             score_0 = c_simulator.UltraConservativeScore(sim,0)
             score_1 = c_simulator.AggressiveScore(sim,1)
             t = self.calculate_time_per_policy()
-            res = sim.simulate_combat(t,
-                    score_0,
-                    score_1,
-                    self.log)
-            self.policy = sim.get_friend_policy(res) 
-            self.log.info("Policy: %s", self.policy)
+            if t <= 0:
+                self.log.warning("No time for a policy!")
+                self.policy = dict( (a, '-') for a in policy_ants)
+            else:
+                res = sim.simulate_combat(t,
+                        score_0,
+                        score_1,
+                        self.log)
+                self.policy = sim.get_friend_policy(res) 
+                self.log.info("Policy: %s", self.policy)
+            self.setup_planner(True)
         else :
             self.log.info("No policy will be calculated!")
             self.log.info("Policy ants: %s", policy_ants)
             self.log.info("Policy enemies: %s", policy_enemies)
-            self.setup_planner(True)
             self.policy = {}
+            self.setup_planner(True)
         
         self.log.info("Moving all the ants with a policy")
         for ant, d in self.policy.iteritems():

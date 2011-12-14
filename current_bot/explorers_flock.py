@@ -69,12 +69,17 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
                 score_1 = c_simulator.AggressiveScore(sim,1)
             
             t = self.calculate_time_per_policy()
-            res = sim.simulate_combat(t,
-                    score_0,
-                    score_1,
-                    self.log)
-            self.policy = sim.get_friend_policy(res) 
-            self.log.info("Policy: %s", self.policy)
+            if t <= 0:
+                self.log.warning("No time for a policy!")
+                self.policy = dict( (a, '-') for a in policy_ants)
+            else:
+                res = sim.simulate_combat(t,
+                        score_0,
+                        score_1,
+                        self.log)
+                self.policy = sim.get_friend_policy(res) 
+                self.log.info("Policy: %s", self.policy)
+            self.setup_planner(True)
         else :
             self.log.info("No policy will be calculated!")
             self.log.info("Policy ants: %s", policy_ants)

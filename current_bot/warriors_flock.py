@@ -14,14 +14,6 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
     An Aggregator that tries first to cluster the belonging
     ants, then move them towards the closest enemy hill.
 
-    The WarriorsFlock first gathers surronding Warriors (gather state), 
-    and keeps doing this all the time. When the number of controlled ants is
-    sufficient, it will group (grouping state) and 
-    drive them towards an enemy hill (attack state).
-    If the number of ants falls below half the original attacking group size,
-    it will switch back to the gather state. Every time the group is not
-    compact it will fall back to the grouping state.
-
     Only non-aggreagated Warriors will be added to this group. 
     If there are no visible enemy hills the group dibands.
     """
@@ -29,7 +21,7 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
     clustering_std = 1.1
     min_group_size = 0
     max_ants = 10
-    min_dist_to_copt = 30
+    min_dist_to_copt = 10
 
     def __init__(self, leader, antlist, neighbour_dist):
         """
@@ -45,7 +37,7 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         self.attack_pos = None
         self.neighbour_dist = neighbour_dist
         self.world = leader.world
-        self.danger_radius = 2 + int(sqrt(self.world.attackradius2))
+        self.danger_radius = 3 + int(sqrt(self.world.attackradius2))
         self.policy = {}
         self.all_enemies = set()
 
@@ -78,9 +70,6 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         policy_enemies = set(e for e in self.all_enemies 
                 if any(self.can_attack(a.pos,e) for a in policy_ants) )
         
-        #policy_ants = [a.pos for a in self.controlled_ants]
-        #policy_enemies  = self.all_enemies
-
         len_friends = len(policy_ants)
         len_enemies = len(policy_enemies)
         if ((len_friends>0) and (len_enemies)>0):
@@ -99,17 +88,20 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
                 score_1 = c_simulator.AggressiveScore(sim,1)
 
             t = self.calculate_time_per_policy()
-            res = sim.simulate_combat(t,
-                    score_0,
-                    score_1,
-                    self.log)
-            self.policy = sim.get_friend_policy(res) 
-            self.log.info("Policy: %s", self.policy)
+            if t <= 0:
+                self.log.warning("No time for a policy!")
+                self.policy = dict( (a, '-') for a in policy_ants)
+            else:
+                res = sim.simulate_combat(t,
+                        score_0,
+                        score_1,
+                        self.log)
+                self.policy = sim.get_friend_policy(res) 
+                self.log.info("Policy: %s", self.policy)
         else :
             self.log.info("No policy will be calculated!")
             self.log.info("Policy ants: %s", policy_ants)
             self.log.info("Policy enemies: %s", policy_enemies)
-            self.setup_planner(True)
             self.policy = {}
 
 
@@ -161,6 +153,7 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
             for ant, d in self.policy.iteritems():
                 ant.move_heading(d)
             self.transition_delayed("follow_policy")
+            self.setup_planner(True)
         else:
             self.log.info("I can move freely towards the target %s", 
                     self.attack_pos)
