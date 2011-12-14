@@ -227,9 +227,12 @@ class Ants():
 
     def passable(self, loc):
         "True if seen and not water"
-        row, col = loc
-        return self.map[row,col] not in (WATER, UNSEEN)
-    
+        return self.map[loc] not in (WATER, UNSEEN)
+   
+    def cell_visible(self, loc):
+        """True if the cell is visible"""
+        return self.visible[loc]
+
     def notwater(self, loc):
         """
         True if loc is not water
@@ -238,8 +241,7 @@ class Ants():
 
     def unoccupied(self, loc):
         "True if no ants are at the location"
-        row, col = loc
-        return self.map[row,col] in (LAND, DEAD)
+        return self.map[loc] in (LAND, DEAD)
 
     def neighbours(self, pos):
         "Returns the four neighbours of a position"
