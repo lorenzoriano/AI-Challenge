@@ -224,8 +224,9 @@ class PezzBot:
 
         self.postloop_time = postloop_time
         self.average_ant_time = ants_time / len(self.ants)
-        if self.average_ant_time == 0:
-            self.average_ant_time = 1.0 / len(self.ants)
+        if self.average_ant_time < 0:
+            self.log.error("Time %f can't be < 0!", self.average_ant_time)
+            raise ValueError
         
         self.log.info("Preloop average time: %f", preloop_time)
         self.log.info("Ants total time: %f", ants_time)
