@@ -100,6 +100,7 @@ class PezzBot:
         Create new ants if necessary. Every dispatcher is queried
         with a probability, and enough ants are sampled.
         """
+        #TODO change so that it iterates only on the friend hills
         new_ant_loc = (ant_loc for ant_loc in self.world.my_ants()
                         if ant_loc not in self.iterate_ants_loc())
         
@@ -226,7 +227,7 @@ class PezzBot:
         self.average_ant_time = ants_time / len(self.ants)
         if self.average_ant_time < 0:
             self.log.error("Time %f can't be < 0!", self.average_ant_time)
-            raise ValueError
+            self.average_ant_time = 0
         
         self.log.info("Preloop average time: %f", preloop_time)
         self.log.info("Ants total time: %f", ants_time)
