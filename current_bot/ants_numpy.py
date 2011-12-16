@@ -164,17 +164,7 @@ class Ants():
 
     def wrap_coords(self, loc):
         return loc[0] % self.rows, loc[1]%self.cols
-        r,c = loc
-        if r >= self.rows:
-            r = r - self.rows
-        elif r < 0:
-            r = r + self.rows
-        if c >= self.cols:
-            c = c - self.cols
-        elif c < 0:
-            c = c + self.cols
-        return r,c
-
+        
     def map_value(self, loc):
         loc = self.wrap_coords(loc)
         return self.map[loc]

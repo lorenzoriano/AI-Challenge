@@ -3,8 +3,6 @@ ants = MyBot.ants
 import castar
 import logging
 import pezz_logging
-import heapq
-import sys
 from fsm import FSM
 
 logger = logging.getLogger("pezzant.singleant")
@@ -215,14 +213,12 @@ class SingleAnt(FSM):
         Returns an ordered list of (dist, location) of all the food 
         locations whose distance is <= r
         """
+        
         world = self.world
-        food = []
-        for f in world.food():
-            d = castar.pathdist(self.pos, f, r)
-            if 0 < d <= r:
-                heapq.heappush(food, (d,f) )
 
-        return food
+        f_dist = ( (castar.pathlen_range(self.pos, f, r), f) 
+                        for f in world.food())
+        return [f[1] for f in sorted(f_dist) if f[0] < r]
 
     def enemy_in_range(self, r):
         """
@@ -239,20 +235,20 @@ class SingleAnt(FSM):
     
     def enemies_in_range(self, r):
         """
-        Returns an ordered list of (dist, location) of all the enemy 
+        Returns ordered list of all the enemy 
         locations whose distance is <= r
         """
 
         world = self.world
-
-        enemies = []
-        for e in world.enemy_ants():
-            d = world.distance(self.pos, e[0])
-            if d <= r:
-                heapq.heappush(enemies,(d,e[0]) )
-
-        return enemies
-    
+        
+        def key_fun(pos):
+            return castar.pathlen(self.pos, pos)
+        
+        return sorted( (e[0] for e in world.enemy_ants() 
+                        if world.distance(self.pos, e[0]) <= r),
+                        key=key_fun
+                     )
+           
     def unseen_locations(self, r=1000):
         """
         Returns a NON-ordered list of (dist, location) of all the enemy 

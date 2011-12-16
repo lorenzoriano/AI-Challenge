@@ -109,13 +109,16 @@ class Aggregator(object):
         Returns an iterator over of all the enemies within range r of all the
         controlled ants.
         """
-        world = self.world
-        ant_enemies = itertools.product(self.controlled_ants,
-                                        world.enemy_ants())
+        #world = self.world
+        return itertools.chain.from_iterable(a.enemies_in_range(r) 
+                for a in self.controlled_ants)
 
-        enemies = (e[0] for a,e in ant_enemies 
-                if world.distance(a.pos, e[0]) <= r)
-        return enemies
+        #ant_enemies = itertools.product(self.controlled_ants,
+                                        #world.enemy_ants())
+
+        #enemies = (e for a,e in ant_enemies 
+                #if world.distance(a.pos, e) <= r)
+        #return enemies
 
     def __attack_positions(self, enemies, distance=2):
         """
@@ -212,9 +215,11 @@ class Aggregator(object):
         time_remaining = self.world.time_remaining() - 2*bot.postloop_time
         nants = len(bot.ants) - bot.executed_ants
         tot_ants_time = nants * bot.average_ant_time
-        num_aggregators = len(bot.aggregators) - bot.executed_aggregators + 1
+        num_aggregators = max(len(bot.aggregators) - bot.executed_aggregators + 1,
+                              1)
+        
 
-        time_for_aggregators = 0.8*(time_remaining - tot_ants_time) / num_aggregators
+        time_for_aggregators = 0.7*(time_remaining - tot_ants_time) / num_aggregators
         if time_for_aggregators > 0:
             bot.aggregators_times.append(time_for_aggregators)
         time_for_policy = time_for_aggregators / 1000.
