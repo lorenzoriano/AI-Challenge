@@ -208,9 +208,10 @@ class SingleAnt(FSM):
                 ") @ " + 
                 str(self.pos)
                 )
+    
     def food_in_range(self, r):
         """
-        Returns an ordered list of (dist, location) of all the food 
+        Returns an ordered list of location of all the food 
         locations whose distance is <= r
         """
         
