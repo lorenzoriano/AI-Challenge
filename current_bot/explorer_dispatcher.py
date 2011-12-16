@@ -43,7 +43,7 @@ class ExplorerDispatcher(object):
         Returns the likelyhood that this spawner will want to create a new
         ant.
         """
-        return float(len(self.available_locations)) /  (10+len(self.locations))
+        return float(len(self.available_locations)) /  (len(self.locations))
 
     def random_location(self):
         """

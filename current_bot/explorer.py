@@ -49,7 +49,7 @@ class Explorer(singleant.SingleAnt):
 
     def check_reserve_food(self):
         """
-        Returns a food loc if it finds a reachable and reservable food,
+        Returns True if it finds a reachable and reservable food,
         False otherwise.
         """        
         food = self.food_in_range(self.food_gather_range)
