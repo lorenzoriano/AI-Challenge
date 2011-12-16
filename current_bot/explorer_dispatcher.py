@@ -80,6 +80,9 @@ class ExplorerDispatcher(object):
             newloc = min(locs, key=keyfun)
         except ValueError:
             #no more not visible locations
+            self.log.info("No more invisible locatios, unassigned: %s",
+                            self.available_locations)
+            
             return ant.area_loc
 
         self.available_locations.remove(newloc)
@@ -114,7 +117,7 @@ class ExplorerDispatcher(object):
         for k,v in self.food_tracking.iteritems():
             if v == ant:
                 del self.food_tracking[k]
-		self.allocated_food.remove(k)
+                self.allocated_food.remove(k)
                 break
 
         #popping back the ant location
@@ -125,7 +128,7 @@ class ExplorerDispatcher(object):
         Checks if the food at loc has already been reserved by
         another ant.
         """
-	return loc in self.allocated_food
+        return loc in self.allocated_food
         #return self.food_tracking.has_key(loc)
 
     def reserve_food(self, loc, ant):
@@ -133,9 +136,21 @@ class ExplorerDispatcher(object):
         Make ant reserve food at location loc.
         Returns true if the food is reservable, false otherwise.
         """
-        if not self.check_food(loc):
+        stealing = False
+        preallocated = False
+        if loc in self.allocated_food:
+            preallocated = True
+            owner = self.food_tracking[loc]
+            d_ant = castar.pathlen(ant.pos, loc)
+            d_owner = castar.pathlen(owner.pos, loc)
+            if d_ant < d_owner:
+                self.log.info("Removing food @ %s from %s", loc, owner)
+                owner.remove_food()
+                stealing = True
+
+        if (not preallocated) or stealing:
             self.food_tracking[loc] = ant
-	    self.allocated_food.add(loc)
+            self.allocated_food.add(loc)
             self.log.info("Reserving food @ %s for ant %s", loc, ant)
             return True
         else:
@@ -148,7 +163,7 @@ class ExplorerDispatcher(object):
         if self.food_tracking.has_key(loc):
             self.log.info("Removing food @ %s", loc)
             del self.food_tracking[loc]
-	    self.allocated_food.remove(loc)
+            self.allocated_food.remove(loc)
     
     def step(self):
         pass
