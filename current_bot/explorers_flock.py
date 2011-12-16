@@ -39,18 +39,39 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
         self.current_ant = ant
         fsm.FSM.step(self)
 
-    def newturn(self):
-        super(ExplorerFlock, self).newturn()
+    def gather_new_ants(self):
+        """Gathers new ants around this flock"""
+
+        def aggr_check(ant):
+            aggr = getattr(ant,'aggregator',None)
+            if aggr is None:
+                return True
+            elif aggr == self:
+                return False
+            elif type(aggr) is ExplorerFlock:
+                return True
+            else:
+                return False
+
+        coptable_ants = (a for a in self.bot.ants
+                         if
+                         aggr_check(a)
+                         and
+                         any(self.world.distance(a.pos, myant.pos) < 4 
+                             for myant in self.controlled_ants)
+                        )
         
+        for ant in coptable_ants:
+            self.log.info("Adding ant %s to my flock", ant)
+            self.control(ant)
+
+    def create_policy(self):    
         sim = c_simulator.Simulator(self.world.map)
         policy_ants = set(a for a in self.controlled_ants 
                 if any(self.can_attack(a.pos,e) for e in self.all_enemies) )
         policy_enemies = set(e for e in self.all_enemies 
                 if any(self.can_attack(a.pos,e) for a in policy_ants) )
         
-        #policy_ants = [a.pos for a in self.controlled_ants]
-        #policy_enemies  = self.all_enemies
-
         len_friends = len(policy_ants)
         len_enemies = len(policy_enemies)
         if ((len_friends>0) and (len_enemies)>0):
@@ -87,6 +108,11 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
             self.setup_planner(True)
             self.policy = {}
        
+    def newturn(self):
+        super(ExplorerFlock, self).newturn()
+       
+        self.gather_new_ants()
+        self.create_policy()
         self.log.info("Moving all the ants with a policy")
         for ant, d in self.policy.iteritems():
             ant.move_heading(d)
@@ -148,12 +174,7 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
             self.log.info("No more enough controlled ants")
             return False
         super(ExplorerFlock, self).check_status()
-        self.calculate_grouping()
-        if self.grouping > self.min_grouping:
-            self.log.info("Grouping value of %f too high, disbanding",
-                    self.grouping)
-            return False
-        
+                
         #calculating the distance between the enemies and all the ants
         try:
             r = self.leader.danger_radius + 1
