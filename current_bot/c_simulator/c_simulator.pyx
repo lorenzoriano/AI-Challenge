@@ -44,7 +44,7 @@ cdef class ConservativeScore(Score):
                 return 2.0
             else:
                 return 1.0
-        elif delta_my > delta_enemy: #still good
+        elif delta_my >= delta_enemy: #still good
             return 1.0
         else:
             return 0.0
@@ -96,7 +96,7 @@ cdef class AggressiveScore(Score):
                 return 3.0
             else: #I want them burning!
                 return 0.0
-        elif delta_my > delta_enemy: #still good
+        elif delta_my >= delta_enemy: #still good
             return 1.0 #we killed more
         else:
             return 0.0 #we killed less
