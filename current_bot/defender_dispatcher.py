@@ -9,7 +9,7 @@ class DefenderDispatcher(object):
     """
     Creates Defenders
     """
-    danger_radius = 15
+    danger_radius = 10
     def __init__(self, world, bot):
         self.world = world
         self.bot = bot
