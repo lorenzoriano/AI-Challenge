@@ -7,31 +7,7 @@ astar_m = None
 astar_mat = None
 gworld = None
 
-def __add_enemies_surround(mat, world ):
-    """Add a penalty value around the enemies"""
-    amat = np.zeros(mat.shape, dtype=bool)
-    viewradius = int(sqrt(world.attackradius2))
-    diameter = viewradius * 2 + 1
-
-    for (a_row, a_col), _ in world.enemy_ants():
-        top = (a_row - viewradius) % world.rows
-        left = (a_col - viewradius) % world.cols
-        # Height/width of the top and left parts of vision disc (which might actually
-        # be draw at the bottom or right of the map) -- rest of vision disc wraps over.
-        toph = min(diameter, world.rows - top)
-        leftw = min(diameter, world.cols - left)
-        if toph == diameter and leftw == diameter:
-            amat[top:top+toph, left:left+leftw] |= world.attack_disc
-        else:
-            bottomh = diameter - toph
-            rightw = diameter - leftw
-
-            amat[top:top+toph, left:left+leftw] |= world.attack_disc[:toph, :leftw]
-            amat[:bottomh, left:left+leftw] |= world.attack_disc[toph:, :leftw]
-            amat[top:top+toph, :rightw] |= world.attack_disc[:toph, leftw:]
-            amat[:bottomh, :rightw] |= world.attack_disc[toph:, leftw:]
-    
-    mat[mat != ants.WATER] += (amat[mat != ants.WATER] * 4)
+paths_cache = {}
 
 def setup(mat, world):
     global astar_mat
@@ -46,8 +22,6 @@ def setup(mat, world):
     #Increasing the cost of stepping over other ants
     intmat[mat == ants.ANTS] = 4 #the cost of going around is smaller
     
-    #add_enemies_surround(intmat, world)
-    
     #filename = "map_"+str(world.turn)+".txt"
     #np.savetxt(filename, intmat)
 
@@ -58,6 +32,8 @@ def setup(mat, world):
         astar_m = astar.AstarMatrix(astar_mat, 10000, 4)
     else:
         astar_m.reset()
+    global paths_cache
+    paths_cache = {}
 
 def pathfind(start_pos, goal_pos, bot = None, world = None):
     """
@@ -65,11 +41,41 @@ def pathfind(start_pos, goal_pos, bot = None, world = None):
 
     Returns the path, which is empty if no path was found
     """
+    global paths_cache
+    if (start_pos, goal_pos) in paths_cache:
+        return paths_cache[(start_pos, goal_pos)]
+
     path, cost = astar_m.solve(start_pos, goal_pos)
     if len(path) == 0:
+        paths_cache[(start_pos, goal_pos)] = []
         return []
     else:
+        paths_cache[(start_pos, goal_pos)] = path[1:]
         return path[1:]
+
+def pathlen_range(start_pos, goal_pos, r):
+    """
+    Returns the length of the path between start_pos and goal_pos if it's less 
+    than r, otherwise  r+1
+    """
+    if gworld.distance(start_pos, goal_pos) > r:
+        return (r+1)
+    path = pathfind(start_pos, goal_pos)
+    if len(path) == 0 or len(path) > r:
+        return (r+1)
+    else:
+        return len(path)
+
+def pathlen(start_pos, goal_pos):
+    """
+    Return the length of the path between start_pos and goal_pos, or a very 
+    large number if this path doesn't exist.
+    """
+    d = len(pathfind(start_pos, goal_pos))
+    if d == 0:
+        return 10e9
+    else:
+        return d
 
 def pathdist(start_pos, goal_pos, d):
     """
