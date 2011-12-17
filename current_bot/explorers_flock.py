@@ -80,7 +80,7 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
             sim.create_from_lists(policy_ants, policy_enemies)
             
             if len_friends > len_enemies:
-                score_0 = c_simulator.AggressiveScore(sim,0)
+                score_0 = c_simulator.ConservativeScore(sim,0)
                 score_1 = c_simulator.ConservativeScore(sim,1)
             elif len_friends == len_enemies:
                 score_0 = c_simulator.UltraConservativeScore(sim,0)
@@ -258,12 +258,17 @@ def create(calling_ant, neighbour_dist, enemies):
     True if the Aggregator could be formed, False if no enough ants are nearby.
     """
 
+    bot = calling_ant.bot
+    num_aggregated = sum(len(aggr.controlled_ants) for aggr in bot.aggregators)
+    if num_aggregated > len(bot.ants) / 2:
+        calling_ant.log.info("Too many aggregated: %d, number of ants: %d",
+                            num_aggregated, len(bot.ants))
+        return False
+
     def dist_criterion(ant):
-        #return any( castar.pathdist(ant.pos, e, neighbour_dist) for e in enemies)
         return castar.pathdist(ant.pos, calling_ant.pos, neighbour_dist)
 
     ant_list = set([calling_ant])
-    bot = calling_ant.bot
     free_ants = (a for a in bot.ants
                     if
                     ExplorerFlock.check_if_grab(a)
