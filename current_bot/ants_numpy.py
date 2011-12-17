@@ -11,6 +11,8 @@ np.seterr(divide='raise')
 timingf = time.time
 #timingf = time.clock
 
+from c_distance import distance as c_dist
+
 MY_ANT = 0
 ANTS = 0
 DEAD = -1
@@ -255,11 +257,14 @@ class Ants():
 
     def distance(self, loc1, loc2):
         "Calculate the closest distance between two locations"
-        row1, col1 = loc1
-        row2, col2 = loc2
-        d_col = min(abs(col1 - col2), self.cols - abs(col1 - col2))
-        d_row = min(abs(row1 - row2), self.rows - abs(row1 - row2))
-        return d_row + d_col
+        
+        return c_dist(loc1[0], loc1[1], loc2[0], loc2[1], self.rows, self.cols)
+        
+        #row1, col1 = loc1
+        #row2, col2 = loc2
+        #d_col = min(abs(col1 - col2), self.cols - abs(col1 - col2))
+        #d_row = min(abs(row1 - row2), self.rows - abs(row1 - row2))
+        #return d_row + d_col
 
     def direction(self, loc1, loc2):
         "Return a list of the 1 or 2 fastest (closest) directions to reach a location"
