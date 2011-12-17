@@ -36,23 +36,14 @@ class WarriorDispatcher(object):
         estimated_enemies = (number_of_enemies + 
                 (1. - visible_perc) * number_of_enemies/visible_perc)
         self.log.info("Estimated enemies: %f", estimated_enemies)
-        if visible_perc < 0.5:
-            return 0.01
+        if visible_perc < 0.3:
+            return 0.00
         if len(self.bot.ants) > estimated_enemies*(len(self.ants)+1):
             self.log.info("OK to make a Warrior")
             return 1.0
         else:
-            return 0.01
+            return 0.00
 
-        if len(self.bot.ants) == 0:
-            return 0.0
-        ants_ratio = float(len(self.ants)) / len(self.bot.ants)
-        if ants_ratio < 1./15:
-            return 1.0
-        else:
-            return 0.01
-        
-      
     def create_ant(self, loc):
         """
         Create a Warrior ant if needed.

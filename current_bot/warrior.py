@@ -3,6 +3,7 @@ ants = MyBot.ants
 import singleant
 import warriors_flock
 import random
+import math
 
 class Warrior(singleant.SingleAnt):
     """
@@ -18,6 +19,8 @@ class Warrior(singleant.SingleAnt):
         
         self.goal = None
         self.dispatcher = dispatcher
+        self.food = None
+        self.food_gather_range = int(math.sqrt(world.viewradius2))
    
     def planning_state(self):
         """
@@ -31,6 +34,10 @@ class Warrior(singleant.SingleAnt):
         world = self.world
         hills = [(world.distance(self.pos, h),h) for h in bot.enemy_hills]
         if len(hills) == 0:
+            #checking for food
+            if self.check_reserve_food():
+                self.log.info("Food nearby, going for it!")
+                return self.transition("forage_state")
             self.log.info("No enemy hills, exploring")
             return self.transition("explore_state")
 
@@ -63,8 +70,60 @@ class Warrior(singleant.SingleAnt):
         The Warrior will move towards the closest unseen location.
         """
         unseen_locs = self.unseen_locations()
-        d, self.goal = random.choice(unseen_locs)
+        self.goal = random.choice(unseen_locs)
         self.log.info("going for unseen loation")
         self.move_to(self.goal)
 
         return self.transition_delayed("planning_state")
+
+
+    def check_reserve_food(self):
+        """
+        Returns True if it finds a reachable and reservable food,
+        False otherwise.
+        """        
+        food = self.food_in_range(self.food_gather_range)
+        for f in food:
+            self.log.info("Is food @ %s free?", f)
+            if self.bot.explorer_dispatcher.reserve_food(f, self):
+                self.food = f
+                self.log.info("Reserving food at %s", f)
+                return True
+        return False
+
+    def forage_state(self):
+        """
+        Goes for food
+        """
+        if self.food is None:
+		    return self.transition("planning_state")
+        food_loc = self.food
+        
+        if food_loc not in self.world.food():
+            self.log.info("No more food at %s", food_loc)
+            self.bot.explorer_dispatcher.free_food(self.food)
+            self.food = None
+            return self.transition("planning_state")
+
+        if self.world.distance(self.pos, food_loc) <= 1:
+            self.log.info("Food is already close, not moving")
+            return self.transition_delayed("planning_state")
+
+        if not self.move_to(food_loc):
+            self.bot.explorer_dispatcher.free_food(self.food)
+            self.food = None
+            return self.transition("planning_state")
+
+    def remove_food(self):
+        """Somebody from above commands I shouldn't follow food anymore"""
+        self.log.info("I don't follow food at %s anymore", self.food)
+        self.food = None
+        self.transition_delayed("planning_state")
+
+    def controlled(self):
+        """
+        Release the food
+        """
+        if self.food:
+            self.bot.explorer_dispatcher.free_food(self.food)
+
