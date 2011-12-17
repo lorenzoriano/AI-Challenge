@@ -19,7 +19,9 @@ cdef class Simulator
 
 cdef class Score:
     cdef float call(self, Simulator simulator):
+        raise NotImplementedError
         return 0.0
+
 
 cdef class ConservativeScore(Score):
     cdef int side
@@ -31,6 +33,9 @@ cdef class ConservativeScore(Score):
         self.my_init_ants = simulator.count_owner(self.side)
         self.enemy_init_ants = simulator.count_enemies(self.side)
 
+    def py_call(self, Simulator simulator):
+        return self.call(simulator)
+    
     cdef float call(self, Simulator simulator):
 
         cdef int my_final_ants = simulator.count_owner(self.side)
@@ -59,6 +64,9 @@ cdef class UltraConservativeScore(Score):
         self.my_init_ants = simulator.count_owner(self.side)
         self.enemy_init_ants = simulator.count_enemies(self.side)
 
+    def py_call(self, Simulator simulator):
+        return self.call(simulator)
+    
     cdef float call(self, Simulator simulator):
 
         cdef int my_final_ants = simulator.count_owner(self.side)
@@ -68,8 +76,9 @@ cdef class UltraConservativeScore(Score):
         cdef int delta_enemy = enemy_final_ants - self.enemy_init_ants
 
         if delta_my == 0: #no friend ants died
+            return 1.0 #really conservative
             if delta_enemy < 0: #too good!
-                return 2.0
+                return 1.0
             else:
                 return 1.0
         else: #I don't want to loose good guys
@@ -84,6 +93,9 @@ cdef class AggressiveScore(Score):
         self.my_init_ants = simulator.count_owner(self.side)
         self.enemy_init_ants = simulator.count_enemies(self.side)
 
+    def py_call(self, Simulator simulator):
+        return self.call(simulator)
+    
     cdef float call(self, Simulator simulator):
         cdef int my_final_ants = simulator.count_owner(self.side)
         cdef int enemy_final_ants = simulator.count_enemies(self.side)
@@ -97,7 +109,7 @@ cdef class AggressiveScore(Score):
             else: #I want them burning!
                 return 0.0
         elif delta_my >= delta_enemy: #still good
-            return 1.0 #we killed more
+            return 1.0 #we killed more or equal
         else:
             return 0.0 #we killed less
 
@@ -114,7 +126,7 @@ cdef class _Ant:
     cdef copy(self):
         return 
 
-cdef _Ant Ant(int i, int j, int owner):
+cpdef _Ant Ant(int i, int j, int owner):
     cdef _Ant instance = _Ant.__new__(_Ant)
     instance.i = i
     instance.j = j
@@ -124,6 +136,8 @@ cdef _Ant Ant(int i, int j, int owner):
 cdef inline int int_max(int a, int b): return a if a >= b else b
 cdef inline int int_min(int a, int b): return a if a <= b else b
 cdef inline int int_abs(int a): return a if a >= 0  else -a
+
+cdef inline double double_max(double a, double b): return a if a >= b else b
 
 cdef class Simulator:
     #TODO Change two lists of ANTS: enemies and friends
@@ -257,6 +271,12 @@ cdef class Simulator:
 
     cdef void add_ant(self, _Ant ant):
         self.ants.append(ant)
+    
+    def  py_add_ant(self, _Ant ant):
+        self.ants.append(ant)
+
+    def py_move_ant(self, _Ant ant, tuple newpos):
+        return self.move_ant(ant, newpos)
 
     cdef int move_ant(self, _Ant ant, tuple newpos):
 #        cdef np.ndarray[np.int_t, ndim=2, mode="c"] array = self.map
@@ -269,7 +289,10 @@ cdef class Simulator:
         else:
             self.next_loc[newpos] = [ant]
         return 1
-  
+ 
+    def py_move_direction(self, _Ant ant, str d):
+        return self.move_direction(ant, d)
+
     cdef int move_direction(self, _Ant ant, str d):
         cdef tuple pos = AIM[d]
         cdef int i, j
@@ -307,6 +330,9 @@ cdef class Simulator:
         cdef list k1 = self.finalize_movements()
         k1.extend(self.do_attack_focus())
         return k1
+
+    def py_step_turn(self):
+        return self.step_turn()
 
     cdef int count_owner(self, int owner):
         cdef _Ant a
@@ -350,8 +376,12 @@ cdef class Simulator:
 
         cdef object ps
         cdef list pol
-
         cdef double curr_time 
+
+        
+        cdef unsigned infor_index
+        cdef double infor_score_val
+        cdef double infor_pol_val
         while True:
             curr_time = time_fn()
             if (curr_time - start) >= allowed_time:
@@ -378,6 +408,18 @@ cdef class Simulator:
                 
             killed = self.step_turn()
             for a, pol in self.policy.iteritems():
+                
+                #if a.owner == 0:
+                #    infor_score_val = score_0.call(self)
+                #else:
+                #    infor_score_val = score_1.call(self)
+
+                #infor_index = action[a]
+                #infor_pol_val = pol[infor_index]
+                #pol[infor_index] = double_max(infor_pol_val + infor_score_val,
+                #                              1.0
+                #                              )
+                
                 if a.owner == 0:
                     pol[action[a]] += score_0.call(self)
                 else:
@@ -408,8 +450,10 @@ cdef class Simulator:
             retpolicy[a] = self.actions[p_index]
         if log is not None:
             log.info("Number of steps: %d", steps)
+            #log.info("Raw policy: %s", self.policy)
         else:
             print "Number of steps: ", steps
+            print "Raw policy: ", self.policy
         return retpolicy
 
 def test1():
