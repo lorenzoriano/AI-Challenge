@@ -116,15 +116,15 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         self.log.info("Enemies around: %s", self.all_enemies)
         close_enemy = len(self.all_enemies) > 0
 
-        #the enemy hill is closer than the home hill
         ehill_d = self.world.distance(self.leader.pos, self.attack_pos)
 
         mhill_l = self.leader.my_hills()
         if len(mhill_l) == 0: #strange things happen with ants_numpy
             mhill_d = 0
         else:
-            mhill_d = min(mhill_l)[1]
+            mhill_d = min(mhill_l)[0]
 
+        #the enemy hill is closer than the home hill
         if (ehill_d < mhill_d):
             self.log.info("The enemy hill is close, copting")
             antlist = bot.ants
