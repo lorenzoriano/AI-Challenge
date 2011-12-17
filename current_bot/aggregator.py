@@ -9,7 +9,7 @@ ants = MyBot.ants
 import castar
 import itertools
 from math import sqrt
-import drawcircle
+import c_drawcircle as drawcircle
 
 logger = logging.getLogger("pezzant.aggregator")
 
@@ -134,9 +134,7 @@ class Aggregator(object):
         return itertools.ifilter(self.world.notwater, gen) 
 
     def attack_positions(self, enemies):
-        gen = itertools.chain.from_iterable(drawcircle.attack_positions(
-                                            e,
-                                            self.world.attackradius2)
+        gen = (drawcircle.attack_positions(e, self.world.attackradius2)
                                     for e in enemies)
 
         good_poses = map(self.world.wrap_coords, gen)
@@ -223,6 +221,7 @@ class Aggregator(object):
         if time_for_aggregators > 0:
             bot.aggregators_times.append(time_for_aggregators)
         time_for_policy = time_for_aggregators / 1000.
+        
         self.log.info("Policy time: %f", time_for_policy)
         self.log.info("Locals: %s", locals())
         return time_for_policy
