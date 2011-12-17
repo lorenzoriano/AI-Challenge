@@ -210,14 +210,14 @@ class Aggregator(object):
     def calculate_time_per_policy(self):
         #return 0.03
         bot = self.bot
-        time_remaining = self.world.time_remaining() - 2*bot.postloop_time
+        time_remaining = self.world.time_remaining() - 3*bot.postloop_time
         nants = len(bot.ants) - bot.executed_ants
         tot_ants_time = nants * bot.average_ant_time
         num_aggregators = max(len(bot.aggregators) - bot.executed_aggregators + 1,
                               1)
         
 
-        time_for_aggregators = 0.7*(time_remaining - tot_ants_time) / num_aggregators
+        time_for_aggregators = 0.8*(time_remaining - tot_ants_time) / num_aggregators
         if time_for_aggregators > 0:
             bot.aggregators_times.append(time_for_aggregators)
         time_for_policy = time_for_aggregators / 1000.
