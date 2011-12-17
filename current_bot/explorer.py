@@ -4,7 +4,7 @@ import singleant
 import random
 import explorers_flock 
 from math import sqrt
-import drawcircle
+import c_drawcircle as drawcircle
 import itertools
 import castar
 
