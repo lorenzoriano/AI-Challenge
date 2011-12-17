@@ -66,22 +66,20 @@ class ExplorerDispatcher(object):
         Assign a new location to ant. The new location is chosen to be the
         closest to ant. Unseen locations are given priority.
         """
-        locs = itertools.ifilterfalse(self.world.cell_visible,
-                                      self.available_locations)
+        #locs = itertools.ifilterfalse(self.world.cell_visible,
+        #                              self.available_locations)
+        
+        locs = (loc for loc in self.available_locations 
+                if not self.world.cell_visible(loc))
 
         def keyfun(loc):
-            l = len(castar.pathfind(ant.pos, loc))
-            if l:
-                return l
-            else:
-                raise ValueError
+            return castar.pathlen(ant.pos, loc)
 
         try:
             newloc = min(locs, key=keyfun)
         except ValueError:
             #no more not visible locations
-            self.log.info("No more invisible locatios, unassigned: %s",
-                            self.available_locations)
+            self.log.info("No more invisible locatios",)
             
             return ant.area_loc
 
@@ -107,11 +105,11 @@ class ExplorerDispatcher(object):
         """
         Remove any reference to an ant when it dies
         """
-        if type(ant) is not explorer.Explorer:
-            return
-        
-        self.log.info("Removing ant %s", ant)
-        self.ants.remove(ant)
+        if type(ant) is explorer.Explorer:
+            self.log.info("Removing ant %s", ant)
+            self.ants.remove(ant)
+            #popping back the ant location
+            self.available_locations.append(ant.area_loc)
         
         #setting the food as available
         for k,v in self.food_tracking.iteritems():
@@ -120,8 +118,6 @@ class ExplorerDispatcher(object):
                 self.allocated_food.remove(k)
                 break
 
-        #popping back the ant location
-        self.available_locations.append(ant.area_loc)
 
     def check_food(self, loc):
         """
