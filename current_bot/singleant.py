@@ -254,7 +254,7 @@ class SingleAnt(FSM):
         """
         Returns a NON-ordered list of locations all the unseen locations 
         """
-        return [ loc for loc in self.bot.unseen] 
+        self.bot.unseen() 
         
     def my_hills(self, r=1000):
         """
@@ -264,15 +264,15 @@ class SingleAnt(FSM):
 
         world = self.world
 
-        my_hills = []
+        close_hills = []
         for loc in self.world.my_hills():
             d = world.distance(self.pos, loc)
             if d <= r:
-                my_hills.append((d,loc) )
+                close_hills.append((d,loc) )
 
-        if len(my_hills) == 0:
+        if len(close_hills) == 0:
             self.log.error("No close hills? World says %s", self.world.my_hills())
-        return my_hills
+        return close_hills
 
 
     def controlled(self):
