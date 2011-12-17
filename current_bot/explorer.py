@@ -37,7 +37,7 @@ class Explorer(singleant.SingleAnt):
         If it can't find a suitable location within 10 trials, go to completely
         random location.
         """
-        r = self.food_gather_range
+        r = self.food_gather_range/2
         area_loc = self.area_loc
 
         row = random.randint(area_loc[0]-r, area_loc[0]+r)
@@ -54,6 +54,8 @@ class Explorer(singleant.SingleAnt):
         """        
         food = self.food_in_range(self.food_gather_range)
         for f in food:
+            if f == self.food:
+                continue
             self.log.info("Is food @ %s free?", f)
             if self.dispatcher.reserve_food(f, self):
                 self.food = f
