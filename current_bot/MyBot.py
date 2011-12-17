@@ -52,7 +52,6 @@ class PezzBot:
                 self
                 )
         self.enemy_hills = set()
-        self.unseen = set()
         self.aggregators = set()
         self.executed_aggregators = 0
         self.postloop_time = 10.
@@ -81,9 +80,6 @@ class PezzBot:
                             self.defender_dispatcher]
         self.mover = mover.Mover(world, self)
 
-        self.unseen = set( (r,c) for r in xrange(world.rows)
-                                 for c in xrange(world.cols)
-                         )
         self.ants_tracker = TimeTracker(0)
         self.preloop_tracker = TimeTracker(0)
         self.postloop_tracker = TimeTracker(0)
@@ -148,16 +144,25 @@ class PezzBot:
     def remove_aggregator(self, aggr):
         self.aggregators.discard(aggr)
 
+    def unseen(self):
+        unseen_arr = np.logical_not(self.explored)
+        nz = np.nonzero(unseen_arr)
+        locs_arr = np.transpose(nz.nonzero())
+        return locs_arr.tolist()
+
     # do turn is run once per turn
     def do_turn(self, world):
         self.preloop_tracker.tick()
         self.log.info("----------")
         self.log.info("Start turn")
         
+        self.explored_map = np.logical_or(self.explored_map,
+                                           self.world.visible)
         visible =  self.explored_map.sum()
         if visible != self.prev_visible:
             self.log.info("The world has changed, let's update astar")
             castar.setup(world.map, world)
+        
         self.prev_visible = visible
         self.turn += 1
         self.executed_aggregators = 0
@@ -173,11 +178,6 @@ class PezzBot:
                 if hill not in world.hill_list:
                     self.log.info("Removing hill at %s", hill)
                     self.enemy_hills.remove(hill)
-
-        #removing visible locations
-        for loc in self.unseen.copy():
-            if world.visible[loc]:
-                self.unseen.discard(loc)
 
         #removing dead_ants
         for ant in self.ants[:]:
@@ -201,14 +201,16 @@ class PezzBot:
         preloop_time = self.preloop_tracker.tock()
         ants_time = 0.
         self.ants_tracker.tick()
-        for ant_number, ant in enumerate(iter_ants):
+        for ant in iter_ants:
             ant.step()
             
             self.executed_ants += 1
             
-            if world.time_remaining() < 2*self.postloop_time:
+            if world.time_remaining() < 3*self.postloop_time:
                 self.log.warning("Timeout incoming, bail out!")
                 break
+
+            self.log.info("Time remaining: %f", world.time_remaining())
         
         ants_time += self.ants_tracker.tock() - sum(self.aggregators_times)
         if ants_time <= 0:
@@ -222,6 +224,8 @@ class PezzBot:
         
         self.log.info("number of my hills: %d", len(self.world.my_hills()))
         self.log.info("number of enemy hills: %d", len(self.enemy_hills))
+        self.log.info("number of enemy hills (world): %d", 
+                len(world.enemy_hills()))
         self.log.info("number of explorer: %d", len(self.explorer_dispatcher.ants))
         self.log.info("number of warrior: %d", len(self.warrior_dispatcher.ants))
         
@@ -231,7 +235,7 @@ class PezzBot:
         self.preloop_tracker.reset()
         self.postloop_tracker.reset()
 
-        self.postloop_time = postloop_time
+        self.postloop_time = max(self.postloop_time, postloop_time)
         self.average_ant_time = ants_time / len(self.ants)
         if self.average_ant_time < 0:
             self.log.error("Time %f can't be < 0!", self.average_ant_time)
@@ -243,8 +247,6 @@ class PezzBot:
         self.log.info("Aggregators time: %s", self.aggregators_times)
         self.log.info("Time remaining: %f", world.time_remaining())
 
-        self.explored_map = np.logical_or(self.explored_map,
-                                           self.world.visible)
 
 def main():
     try:
