@@ -24,10 +24,10 @@ class ExplorerDispatcher(object):
         self.food_range = 2*int(sqrt(world.viewradius2)) + 1
         
         radius = self.food_range
-        self.locations = [(r,c) for r in xrange(radius, world.rows, radius)
-                                  for c in xrange(radius, world.cols, radius)]
+        self.locations = set((r,c) for r in xrange(radius, world.rows, radius)
+                                  for c in xrange(radius, world.cols, radius))
         #self.all_locations = locations
-        self.available_locations = self.locations[:]
+        self.available_locations = list(self.locations.copy())
         
         #logging structure
         self.log = pezz_logging.TurnAdapter(
@@ -45,7 +45,7 @@ class ExplorerDispatcher(object):
         """
         return float(len(self.available_locations)) /  (len(self.locations))
 
-    def random_location(self):
+    def random_location(self, pos):
         """
         Generate a random location based on the previously equally spaced grid.
         If there are no available locations, a random one is generated.
@@ -56,8 +56,13 @@ class ExplorerDispatcher(object):
             c = random.randrange(0,self.world.cols)
             ant_loc = (r,c)
         else: 
-            i = random.randrange(len(self.available_locations))
-            ant_loc = self.available_locations.pop(i)
+            
+            def keyfun(loc):
+                #return castar.pathlen(pos, loc)
+                return self.world.distance(pos, loc)
+            
+            self.available_locations.sort(key=keyfun)
+            ant_loc = self.available_locations.pop(0)
 
         return ant_loc
 
@@ -73,7 +78,7 @@ class ExplorerDispatcher(object):
                 if not self.world.cell_visible(loc))
 
         def keyfun(loc):
-            return castar.pathlen(ant.pos, loc)
+            return self.world.distance(ant.pos, loc)
 
         try:
             newloc = min(locs, key=keyfun)
@@ -94,11 +99,11 @@ class ExplorerDispatcher(object):
         Create an Explorer ant if needed.
         Returns the new ant if it has been created, None otherwise    
         """
-        ant_loc = self.random_location() 
+        ant_loc = self.random_location(loc) 
         newant = explorer.Explorer(loc, self.bot, self.world, self,
                                   ant_loc, self.food_range)
         self.ants.append(newant)
-        self.log.info("Creating new explorer %s", newant)
+        self.log.info("Creating new explorer %s with area %s", newant, ant_loc)
         return newant
 
     def remove_ant(self, ant):
@@ -109,15 +114,15 @@ class ExplorerDispatcher(object):
             self.log.info("Removing ant %s", ant)
             self.ants.remove(ant)
             #popping back the ant location
-            self.available_locations.append(ant.area_loc)
+            if ant.area_loc in self.locations:
+                self.available_locations.append(ant.area_loc)
         
         #setting the food as available
-        for k,v in self.food_tracking.iteritems():
+        for k,v in self.food_tracking.copy().iteritems():
             if v == ant:
                 del self.food_tracking[k]
                 self.allocated_food.remove(k)
                 break
-
 
     def check_food(self, loc):
         """
