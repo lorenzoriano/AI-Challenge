@@ -250,22 +250,12 @@ class SingleAnt(FSM):
                         key=key_fun
                      )
            
-    def unseen_locations(self, r=1000):
+    def unseen_locations(self):
         """
-        Returns a NON-ordered list of (dist, location) of all the enemy 
-        locations whose distance is <= r
+        Returns a NON-ordered list of locations all the unseen locations 
         """
-
-        world = self.world
-
-        unseen_locs = []
-        for loc in self.bot.unseen:
-            d = world.distance(self.pos, loc)
-            if d <= r:
-                unseen_locs.append((d,loc) )
-
-        return unseen_locs
-
+        return [ loc for loc in self.bot.unseen] 
+        
     def my_hills(self, r=1000):
         """
         Returns a NON-ordered list of (dist, location) of all the enemy 
