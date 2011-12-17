@@ -59,6 +59,9 @@ class PezzBot:
         self.average_ant_time = 10.
         self.executed_ants = 0
         self.aggregators_times = []
+
+        self.explored_map = None
+        self.prev_visible = -1
         
     # do_setup is run once at the start of the game
     # after the bot has received the game settings
@@ -85,8 +88,8 @@ class PezzBot:
         self.preloop_tracker = TimeTracker(0)
         self.postloop_tracker = TimeTracker(0)
         castar.setup(world.map, world)
-        self.log.info("Attack disc: \n%s", world.attack_disc)
-        self.log.info("Attack disc 1: \n%s", world.attack_disc_1)
+
+        self.explored_map = np.zeros(world.map.shape, dtype = np.bool)
 
     def iterate_ants_loc(self):
         """
@@ -150,7 +153,12 @@ class PezzBot:
         self.preloop_tracker.tick()
         self.log.info("----------")
         self.log.info("Start turn")
-        castar.setup(world.map, world)
+        
+        visible =  self.explored_map.sum()
+        if visible != self.prev_visible:
+            self.log.info("The world has changed, let's update astar")
+            castar.setup(world.map, world)
+        self.prev_visible = visible
         self.turn += 1
         self.executed_aggregators = 0
         self.executed_ants = 0
@@ -207,7 +215,7 @@ class PezzBot:
             ants_time = 1.0
         self.postloop_tracker.tick()
         self.mover.finalize()
-        if profiler is not None and self.turn == 500:
+        if profiler is not None and self.turn == 300:
             profiler.dump_stats("profiler.prof")
             sys.exit()
 
@@ -216,7 +224,7 @@ class PezzBot:
         self.log.info("number of enemy hills: %d", len(self.enemy_hills))
         self.log.info("number of explorer: %d", len(self.explorer_dispatcher.ants))
         self.log.info("number of warrior: %d", len(self.warrior_dispatcher.ants))
-        self.log.info("number of defender: %d", len(self.defender_dispatcher.ants))
+        
         postloop_time = self.postloop_tracker.tock()
         
         self.ants_tracker.reset()
@@ -230,9 +238,13 @@ class PezzBot:
             self.average_ant_time = 0
         
         self.log.info("Preloop average time: %f", preloop_time)
-        self.log.info("Ants total time: %f", ants_time)
+        self.log.info("Ants single time: %f", self.average_ant_time)
         self.log.info("Postloop average time: %f", postloop_time)
+        self.log.info("Aggregators time: %s", self.aggregators_times)
         self.log.info("Time remaining: %f", world.time_remaining())
+
+        self.explored_map = np.logical_or(self.explored_map,
+                                           self.world.visible)
 
 def main():
     try:
