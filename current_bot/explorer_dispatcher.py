@@ -72,6 +72,7 @@ class ExplorerDispatcher(object):
 
         return ant_loc
 
+    
     def give_me_new_loc(self, ant):
         """
         Assign a new location to ant. The new location is chosen to be the
