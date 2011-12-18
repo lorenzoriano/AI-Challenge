@@ -38,8 +38,9 @@ class Warrior(singleant.SingleAnt):
             if self.check_reserve_food():
                 self.log.info("Food nearby, going for it!")
                 return self.transition("forage_state")
-            self.log.info("No enemy hills, exploring")
-            return self.transition("explore_state")
+            self.log.info("No enemy hills, Dying!!!")
+            self.pos = (-1, -1)
+            return self.transition_delayed("planning_state")
 
         self.goal = min(hills)[1]
         self.log.info("going for hill %s", self.goal)
@@ -70,12 +71,11 @@ class Warrior(singleant.SingleAnt):
         The Warrior will move towards the closest unseen location.
         """
         unseen_locs = self.unseen_locations()
-        self.goal = random.choice(unseen_locs)
+        self.goal = tuple(random.choice(unseen_locs))
         self.log.info("going for unseen loation")
         self.move_to(self.goal)
 
         return self.transition_delayed("planning_state")
-
 
     def check_reserve_food(self):
         """

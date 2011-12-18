@@ -135,6 +135,7 @@ class SingleAnt(FSM):
         Otherwise plan using astar. Returns the plan or an
         empty list if no plan was found.    
         """
+        
         if loc is None:
             self.log.warning("attempting to move to None!")
             self.reset_cache()
@@ -160,6 +161,10 @@ class SingleAnt(FSM):
                 #return the path from the next position on
                 return plan[i+1:]
 
+        if self.world.time_remaining() < 5*self.bot.postloop_time():
+            self.log.warning("No time to plan, get out!")
+            return []
+
         #no plan in the cache, running A*
         self.log.info("planning to %s", loc)
 
@@ -176,6 +181,7 @@ class SingleAnt(FSM):
         loc = self.world.wrap_coords(loc)
         path = self.__plan_to(loc)
         if len(path) == 0:
+            self.bot.mark_unreachable(loc)
             self.log.info("There is no path!")
             return False
         

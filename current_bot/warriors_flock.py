@@ -21,7 +21,7 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
     clustering_std = 1.1
     min_group_size = 0
     max_ants = 10
-    min_dist_to_copt = 10
+    min_dist_to_copt = 20
 
     def __init__(self, leader, antlist, neighbour_dist):
         """
@@ -107,8 +107,7 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
 
     def newturn(self):
         """
-        Calculates the centroid and grouping of all the ants. Add ants to
-        this group.
+        Add ants to this group. Calculate the policy.
         """
         super(WarriorsFlock, self).newturn()
         bot = self.leader.bot
@@ -125,7 +124,7 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
             mhill_d = min(mhill_l)[0]
 
         #the enemy hill is closer than the home hill
-        if (ehill_d < mhill_d):
+        if (ehill_d < 2*mhill_d):
             self.log.info("The enemy hill is close, copting")
             antlist = bot.ants
         else:
@@ -135,7 +134,7 @@ class WarriorsFlock(aggregator.Aggregator, fsm.FSM):
         copted_ants = (a for a in antlist
                        if self.check_if_grab(a) and 
                        castar.pathdist(self.leader.pos, a.pos, 
-                                       self.neighbour_dist)
+                                       self.min_dist_to_copt)
                       )
         
         for ant in copted_ants:

@@ -1,1 +1,1 @@
-from distance import distance
+from distance import distance, closest_pos

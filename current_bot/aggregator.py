@@ -217,7 +217,7 @@ class Aggregator(object):
                               1)
         
 
-        time_for_aggregators = 0.8*(time_remaining - tot_ants_time) / num_aggregators
+        time_for_aggregators = 0.75*(time_remaining - tot_ants_time) / num_aggregators
         if time_for_aggregators > 0:
             bot.aggregators_times.append(time_for_aggregators)
         time_for_policy = time_for_aggregators / 1000.

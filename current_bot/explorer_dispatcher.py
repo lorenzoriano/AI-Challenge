@@ -5,6 +5,8 @@ import random
 from math import sqrt
 import castar
 import itertools
+import MyBot
+ants = MyBot.ants
 
 logger = logging.getLogger("pezzant.explorer_dispatcher")
 
@@ -54,6 +56,10 @@ class ExplorerDispatcher(object):
             self.log.info("Explorer to random location")
             r = random.randrange(0,self.world.rows)
             c = random.randrange(0,self.world.cols)
+            while self.world.map[r,c] == ants.WATER:
+                self.log.info("Location %s is water, trying again!", (r,c))
+                r = random.randrange(0,self.world.rows)
+                c = random.randrange(0,self.world.cols)
             ant_loc = (r,c)
         else: 
             
@@ -73,6 +79,10 @@ class ExplorerDispatcher(object):
         """
         #locs = itertools.ifilterfalse(self.world.cell_visible,
         #                              self.available_locations)
+
+        if len(self.available_locations) == 0:
+            self.log.info("No more locations!")
+            return ant.area_loc
         
         locs = (loc for loc in self.available_locations 
                 if not self.world.cell_visible(loc))
@@ -89,7 +99,8 @@ class ExplorerDispatcher(object):
             return ant.area_loc
 
         self.available_locations.remove(newloc)
-        self.available_locations.append(ant.area_loc)
+        if ant.area_loc is not None:
+            self.available_locations.append(ant.area_loc)
         self.log.info("Assigning new location %s to ant %s",newloc, ant)
 
         return newloc
@@ -115,6 +126,7 @@ class ExplorerDispatcher(object):
             self.ants.remove(ant)
             #popping back the ant location
             if ant.area_loc in self.locations:
+                self.log.info("Re-adding locations %s", ant.area_loc)
                 self.available_locations.append(ant.area_loc)
         
         #setting the food as available

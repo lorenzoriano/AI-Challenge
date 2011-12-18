@@ -42,6 +42,10 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
     def gather_new_ants(self):
         """Gathers new ants around this flock"""
 
+        #if len(self.controlled_ants) > len(self.all_enemies):
+        #    self.log.info("I have already enough ants, no gathering")
+        #    return
+
         def aggr_check(ant):
             aggr = getattr(ant,'aggregator',None)
             if aggr is None:
@@ -259,6 +263,7 @@ def create(calling_ant, neighbour_dist, enemies):
     """
 
     bot = calling_ant.bot
+    world = calling_ant.world
     num_aggregated = sum(len(aggr.controlled_ants) for aggr in bot.aggregators)
     if num_aggregated > len(bot.ants) / 2:
         calling_ant.log.info("Too many aggregated: %d, number of ants: %d",
@@ -276,10 +281,13 @@ def create(calling_ant, neighbour_dist, enemies):
                     dist_criterion(a)
                  )
 
-    for ant in free_ants:
+    def key_fun(ant):
+        return world.distance(calling_ant.pos, ant.pos)
+
+    for ant in sorted(free_ants, key = key_fun):
         ant_list.add(ant)
-        #if len(ant_list) > len(enemies):
-        #    break
+        if len(ant_list) > len(enemies):
+            break
     
     if len(ant_list) <= len(enemies):
         return False

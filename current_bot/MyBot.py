@@ -145,10 +145,14 @@ class PezzBot:
         self.aggregators.discard(aggr)
 
     def unseen(self):
-        unseen_arr = np.logical_not(self.explored)
-        nz = np.nonzero(unseen_arr)
-        locs_arr = np.transpose(nz.nonzero())
-        return locs_arr.tolist()
+        unseen_arr = np.logical_not(self.explored_map)
+        locs_arr = np.transpose(unseen_arr.nonzero())
+        return locs_arr
+
+    def mark_unreachable(self, pos):
+        self.log.info("Marking pos %s as unreachable", pos)
+        self.explored_map[pos] = True
+        self.world.map[pos] = ants.WATER
 
     # do turn is run once per turn
     def do_turn(self, world):

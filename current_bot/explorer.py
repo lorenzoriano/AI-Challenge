@@ -7,6 +7,9 @@ from math import sqrt
 import c_drawcircle as drawcircle
 import itertools
 import castar
+import numpy as np
+from c_distance import closest_pos
+from c_simulator import c_simulator
 
 class Explorer(singleant.SingleAnt):
     """
@@ -39,11 +42,11 @@ class Explorer(singleant.SingleAnt):
         """
         r = self.food_gather_range/2
         area_loc = self.area_loc
-
+        
         row = random.randint(area_loc[0]-r, area_loc[0]+r)
         col = random.randint(area_loc[1]-r, area_loc[1]+r)
         newpos = self.world.wrap_coords((row,col))
-        
+
         self.log.info("random movement to %s", newpos)
         return  newpos
 
@@ -141,6 +144,7 @@ class Explorer(singleant.SingleAnt):
         #generating a random goal
         oldloc = self.area_loc
         newloc = self.dispatcher.give_me_new_loc(self)
+        #None is already taken into account... isn't it?
         if oldloc == newloc:
             self.log.warning("Didn't get any new loc!")
             self.goal_pos = self.generate_random_goal()
@@ -259,8 +263,34 @@ class Explorer(singleant.SingleAnt):
             if self.move_immediate_pos(c):
                 self.log.info("Escaping to %s", c)
                 return self.transition_delayed("explore_state")
+       
         
-        return self.transition("move_random_state") 
+        self.log.info("Last hope: simulator!!")
+
+        sim = c_simulator.Simulator(self.world.map)
+        policy_ants = set([self])
+       
+        def can_attack(enemy):
+            gen = drawcircle.danger_positions(enemy, self.world.attackradius2)
+            return self.pos in itertools.imap(self.world.wrap_coords, gen)
+        
+        policy_enemies = set(e for e in self.enemies
+                            if can_attack(e))
+        self.log.info("Policy ants: %s", policy_ants)
+        self.log.info("Policy enemies: %s", policy_enemies)
+        sim.create_from_lists(policy_ants, policy_enemies)
+        score_0 = c_simulator.AggressiveScore(sim,0)
+        score_1 = c_simulator.AggressiveScore(sim,1)
+        res = sim.simulate_combat(0.01,
+                        score_0,
+                        score_1,
+                        self.log)
+        policy = sim.get_friend_policy(res) 
+        self.log.info("Policy: %s", policy)
+        d = policy[self]
+        self.move_heading(d)
+
+        return self.transition_delayed("explore_state") 
 
     def step(self):
         """Calculate the number of nearby enemies before giving control to 
