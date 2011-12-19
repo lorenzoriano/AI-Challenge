@@ -42,9 +42,9 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
     def gather_new_ants(self):
         """Gathers new ants around this flock"""
 
-        #if len(self.controlled_ants) > len(self.all_enemies):
-        #    self.log.info("I have already enough ants, no gathering")
-        #    return
+        if len(self.controlled_ants) > len(self.all_enemies) + 1:
+            self.log.info("I have already enough ants, no gathering")
+            return
 
         def aggr_check(ant):
             aggr = getattr(ant,'aggregator',None)
@@ -87,7 +87,7 @@ class ExplorerFlock(aggregator.Aggregator, fsm.FSM):
                 score_0 = c_simulator.ConservativeScore(sim,0)
                 score_1 = c_simulator.ConservativeScore(sim,1)
             elif len_friends == len_enemies:
-                score_0 = c_simulator.UltraConservativeScore(sim,0)
+                score_0 = c_simulator.ConservativeScore(sim,0)
                 score_1 = c_simulator.ConservativeScore(sim,1)
             else:
                 score_0 = c_simulator.UltraConservativeScore(sim,0)
@@ -286,7 +286,7 @@ def create(calling_ant, neighbour_dist, enemies):
 
     for ant in sorted(free_ants, key = key_fun):
         ant_list.add(ant)
-        if len(ant_list) > len(enemies):
+        if len(ant_list) > len(enemies) + 1:
             break
     
     if len(ant_list) <= len(enemies):
