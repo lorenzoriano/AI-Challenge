@@ -161,9 +161,9 @@ class SingleAnt(FSM):
                 #return the path from the next position on
                 return plan[i+1:]
 
-        if self.world.time_remaining() < 5*self.bot.postloop_time():
+        if self.world.time_remaining() < 3*self.bot.postloop_time:
             self.log.warning("No time to plan, get out!")
-            return []
+            return [self.pos]
 
         #no plan in the cache, running A*
         self.log.info("planning to %s", loc)
