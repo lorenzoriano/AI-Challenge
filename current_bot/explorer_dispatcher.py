@@ -7,6 +7,8 @@ import castar
 import itertools
 import MyBot
 ants = MyBot.ants
+import numpy as np
+import c_pos_allocator as pos_allocator
 
 logger = logging.getLogger("pezzant.explorer_dispatcher")
 
@@ -25,12 +27,6 @@ class ExplorerDispatcher(object):
         self.ants = []
         self.food_range = 2*int(sqrt(world.viewradius2)) + 1
         
-        radius = self.food_range
-        self.locations = set((r,c) for r in xrange(radius, world.rows, radius)
-                                  for c in xrange(radius, world.cols, radius))
-        #self.all_locations = locations
-        self.available_locations = list(self.locations.copy())
-        
         #logging structure
         self.log = pezz_logging.TurnAdapter(
                 logger,
@@ -39,79 +35,63 @@ class ExplorerDispatcher(object):
                 )
  
         self.log.info("Food range is %d", self.food_range)
+       
+        self.availability_map = None
+        self.mask = np.ones(self.world.map.shape, 
+                dtype=np.int8, order="C")
+        self.masked_availability = None
     
     def spawn_likelyhood(self):
         """
         Returns the likelyhood that this spawner will want to create a new
         ant.
         """
-        return float(len(self.available_locations)) /  (len(self.locations))
+        return 0.1
 
-    def random_location(self, pos):
+    def random_location(self):
         """
-        Generate a random location based on the previously equally spaced grid.
-        If there are no available locations, a random one is generated.
+        Generate a random location.
         """
-        if len(self.available_locations) == 0:
-            self.log.info("Explorer to random location")
+        r = random.randrange(0,self.world.rows)
+        c = random.randrange(0,self.world.cols)
+        while self.world.map[r,c] == ants.WATER:
+            self.log.info("Location %s is water, trying again!", (r,c))
             r = random.randrange(0,self.world.rows)
             c = random.randrange(0,self.world.cols)
-            while self.world.map[r,c] == ants.WATER:
-                self.log.info("Location %s is water, trying again!", (r,c))
-                r = random.randrange(0,self.world.rows)
-                c = random.randrange(0,self.world.cols)
-            ant_loc = (r,c)
-        else: 
-            
-            def keyfun(loc):
-                #return castar.pathlen(pos, loc)
-                return self.world.distance(pos, loc)
-            
-            self.available_locations.sort(key=keyfun)
-            ant_loc = self.available_locations.pop(0)
 
-        return ant_loc
+        return r,c
 
-    
     def give_me_new_loc(self, ant):
         """
         Assign a new location to ant. The new location is chosen to be the
-        closest to ant. Unseen locations are given priority.
+        closest unmarked to ant.
         """
-        #locs = itertools.ifilterfalse(self.world.cell_visible,
-        #                              self.available_locations)
-
-        if len(self.available_locations) == 0:
-            self.log.info("No more locations!")
+        newloc = self.find_available_pos(ant.pos)
+        if newloc is None:
+            self.log.warning("Sorry %s, couldn't find a new pos for you", ant)
             return ant.area_loc
-        
-        locs = (loc for loc in self.available_locations 
-                if not self.world.cell_visible(loc))
+        else:
+            self.log.info("New area @ %s for ant %s", newloc, ant)
+            pos = ant.area_loc
+            pos_allocator.add_to_mask(self.mask,
+                                       pos[0], pos[1],
+                                       self.world.viewradius2
+                                     )
+            pos_allocator.add_to_mask(self.masked_availability,
+                                       pos[0], pos[1],
+                                       self.world.viewradius2
+                                     )
 
-        def keyfun(loc):
-            return self.world.distance(ant.pos, loc)
-
-        try:
-            newloc = min(locs, key=keyfun)
-        except ValueError:
-            #no more not visible locations
-            self.log.info("No more invisible locatios",)
-            
-            return ant.area_loc
-
-        self.available_locations.remove(newloc)
-        if ant.area_loc is not None:
-            self.available_locations.append(ant.area_loc)
-        self.log.info("Assigning new location %s to ant %s",newloc, ant)
-
-        return newloc
+            return newloc
 
     def create_ant(self, loc):
         """
         Create an Explorer ant if needed.
         Returns the new ant if it has been created, None otherwise    
         """
-        ant_loc = self.random_location(loc) 
+        ant_loc = self.find_available_pos(loc) 
+        if ant_loc is None:
+            ant_loc = self.random_location()
         newant = explorer.Explorer(loc, self.bot, self.world, self,
                                   ant_loc, self.food_range)
         self.ants.append(newant)
@@ -125,10 +105,13 @@ class ExplorerDispatcher(object):
         if type(ant) is explorer.Explorer:
             self.log.info("Removing ant %s", ant)
             self.ants.remove(ant)
-            #popping back the ant location
-            if ant.area_loc in self.locations:
-                self.log.info("Re-adding locations %s", ant.area_loc)
-                self.available_locations.append(ant.area_loc)
+            
+            #popping back the ant area
+            pos = ant.area_loc
+            pos_allocator.add_to_mask(self.mask,
+                                       pos[0], pos[1],
+                                       self.world.viewradius2
+                                     )
         
         #setting the food as available
         for k,v in self.food_tracking.copy().iteritems():
@@ -180,4 +163,33 @@ class ExplorerDispatcher(object):
             self.allocated_food.remove(loc)
     
     def step(self):
-        pass
+        self.availability_map = np.logical_not(self.world.visible).astype(np.int8)
+        enemy_poses = [e[0] for e in self.world.enemy_ants()]
+        if len(enemy_poses):
+            pos_allocator.create_availability_map(self.availability_map,
+                    np.array(enemy_poses, dtype=np.int, order="C"),
+                    self.world.viewradius2
+                    )
+        
+        self.masked_availability = np.logical_and(self.availability_map,
+                                    self.mask).astype(np.int8)
+
+    def find_available_pos(self, pos):
+        newpos = pos_allocator.closest_pos(self.masked_availability,
+                self.world.map,
+                pos[0], pos[1],
+                )
+        if newpos == (-1, -1):
+            self.log.warning("Couldn't find a suitable location for %s", pos)
+            return None
+
+        #newpos is not longer available
+        pos_allocator.remove_from_mask(self.masked_availability,
+                                   newpos[0], newpos[1],
+                                   self.world.viewradius2
+                                 )
+        pos_allocator.remove_from_mask(self.mask,
+                                   newpos[0], newpos[1],
+                                   self.world.viewradius2
+                                 )
+        return newpos
