@@ -217,10 +217,17 @@ class Aggregator(object):
                               1)
         
 
-        time_for_aggregators = 0.75*(time_remaining - tot_ants_time) / num_aggregators
-        if time_for_aggregators > 0:
-            bot.aggregators_times.append(time_for_aggregators)
-        time_for_policy = time_for_aggregators / 1000.
+        time_for_aggregators = 0.8*(time_remaining - tot_ants_time)
+        
+        series = [1.]
+        for i in xrange(num_aggregators-1):
+            series.append( series[-1] * .8)
+
+        mytime = 1. / sum(series) * time_for_aggregators
+
+        if mytime > 0:
+            bot.aggregators_times.append(mytime)
+        time_for_policy = mytime / 1000.
         
         self.log.info("Policy time: %f", time_for_policy)
         self.log.info("Locals: %s", locals())

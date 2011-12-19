@@ -34,7 +34,8 @@ formatter = logging.Formatter(
                 "%(message)s"
                 )
 fh.setFormatter(formatter)
-logger.addHandler(fh)
+#logger.addHandler(fh)
+logger.addHandler(logging.NullHandler())
 
 #profiler = cProfile.Profile()
 profiler = None
@@ -55,7 +56,7 @@ class PezzBot:
         self.aggregators = set()
         self.executed_aggregators = 0
         self.postloop_time = 10.
-        self.average_ant_time = 10.
+        self.average_ant_time = 0.5
         self.executed_ants = 0
         self.aggregators_times = []
 
@@ -190,13 +191,14 @@ class PezzBot:
                 for d in self.dispatchers:
                     d.remove_ant(ant)
 
+        self.explorer_dispatcher.step()
+
         #adding newborn ants
         self.update_ants()
 
-        #updating the dipatchers
-        for d in self.dispatchers:
-            d.step()
-	
+        #the defender wants to know who's alive
+        self.defender_dispatcher.step()
+
         #now is time to update the mover
         self.mover.update(self.ants)
 
@@ -210,7 +212,7 @@ class PezzBot:
             
             self.executed_ants += 1
             
-            if world.time_remaining() < 3*self.postloop_time:
+            if world.time_remaining() < 2*self.postloop_time:
                 self.log.warning("Timeout incoming, bail out!")
                 break
 
@@ -239,7 +241,8 @@ class PezzBot:
         self.preloop_tracker.reset()
         self.postloop_tracker.reset()
 
-        self.postloop_time = max(self.postloop_time, postloop_time)
+        self.postloop_time = (0.5 * max(self.postloop_time, postloop_time)
+                              + 0.5 * postloop_time)
         self.average_ant_time = ants_time / len(self.ants)
         if self.average_ant_time < 0:
             self.log.error("Time %f can't be < 0!", self.average_ant_time)
@@ -247,7 +250,7 @@ class PezzBot:
         
         self.log.info("Preloop average time: %f", preloop_time)
         self.log.info("Ants single time: %f", self.average_ant_time)
-        self.log.info("Postloop average time: %f", postloop_time)
+        self.log.info("Avg postloop time: %f", self.postloop_time)
         self.log.info("Aggregators time: %s", self.aggregators_times)
         self.log.info("Time remaining: %f", world.time_remaining())
 
