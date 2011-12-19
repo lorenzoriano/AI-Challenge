@@ -15,28 +15,58 @@ cdef dict AIM = {'-': (0, 0),
        's': (1, 0),
        'w': (0, -1)}
 
+#cdef inline tuple AIM(str c):
+    #if c == '-':
+        #return (0,0)
+    #elif c == 'n': 
+        #return (-1, 0)
+    #elif c == 'e': 
+        #return (0, 1)
+    #elif c == 's': 
+        #return (1, 0)
+    #elif c == 'w': 
+        #return (0, -1)
+
 cdef class Simulator
 
 cdef class Score:
-    cdef float call(self, Simulator simulator):
-        raise NotImplementedError
-        return 0.0
-
-
-cdef class ConservativeScore(Score):
     cdef int side
     cdef int my_init_ants
     cdef int enemy_init_ants
+    cdef int init_distance
+    
+    cdef inline float call(self, Simulator simulator):
+        raise NotImplementedError
+        return 0.0
+
+    cdef inline int inter_distance(self, Simulator simulator):
+        cdef list my_ants = simulator.ant_owner(self.side)
+        cdef _Ant ai, aj
+        cdef unsigned int i
+        cdef unsigned int d = 0
+
+        cdef unsigned int l = len(my_ants)
+        for i in range(l):
+            ai = my_ants[i]
+            for j in xrange(i+1,l):
+                aj = my_ants[j]
+                d += simulator.distance2(ai.i, ai.j, aj.i, aj.j)
+
+        return d
+
+
+cdef class ConservativeScore(Score):
 
     def __init__(self, Simulator simulator, int side):
         self.side = side
         self.my_init_ants = simulator.count_owner(self.side)
         self.enemy_init_ants = simulator.count_enemies(self.side)
+        self.init_distance = self.inter_distance(simulator)
 
     def py_call(self, Simulator simulator):
         return self.call(simulator)
     
-    cdef float call(self, Simulator simulator):
+    cdef inline float call(self, Simulator simulator):
 
         cdef int my_final_ants = simulator.count_owner(self.side)
         cdef int enemy_final_ants = simulator.count_enemies(self.side)
@@ -44,20 +74,26 @@ cdef class ConservativeScore(Score):
         cdef int delta_my = my_final_ants - self.my_init_ants 
         cdef int delta_enemy = enemy_final_ants - self.enemy_init_ants
 
+        cdef int final_distance
+        cdef int delta_dist  
+
         if delta_my == 0: #no friend ants died
             if delta_enemy < 0: #too good!
-                return 2.0
+                final_distance = self.inter_distance(simulator)
+                delta_dist = final_distance < self.init_distance
+                return 2.0 + delta_dist
             else:
-                return 1.0
-        elif delta_my >= delta_enemy: #still good
-            return 1.0
+                final_distance = self.inter_distance(simulator)
+                delta_dist = final_distance < self.init_distance
+                return 1.0 + delta_dist
+        elif delta_my > delta_enemy: #still good
+            final_distance = self.inter_distance(simulator)
+            delta_dist = final_distance < self.init_distance
+            return 1.0 + delta_dist
         else:
             return 0.0
 
 cdef class UltraConservativeScore(Score):
-    cdef int side
-    cdef int my_init_ants
-    cdef int enemy_init_ants
 
     def __init__(self, Simulator simulator, int side):
         self.side = side
@@ -74,20 +110,18 @@ cdef class UltraConservativeScore(Score):
 
         cdef int delta_my = my_final_ants - self.my_init_ants 
         cdef int delta_enemy = enemy_final_ants - self.enemy_init_ants
+        
+        cdef int final_distance 
+        cdef int delta_dist   
 
         if delta_my == 0: #no friend ants died
-            return 1.0 #really conservative
-            if delta_enemy < 0: #too good!
-                return 1.0
-            else:
-                return 1.0
+            final_distance = self.inter_distance(simulator)
+            delta_dist = final_distance < self.init_distance
+            return 1.0 + delta_dist
         else: #I don't want to loose good guys
             return 0.0
 
 cdef class AggressiveScore(Score):
-    cdef int side
-    cdef int my_init_ants
-    cdef int enemy_init_ants
     def __init__(self, Simulator simulator, int side):
         self.side = side
         self.my_init_ants = simulator.count_owner(self.side)
@@ -102,14 +136,23 @@ cdef class AggressiveScore(Score):
 
         cdef int delta_my = my_final_ants - self.my_init_ants 
         cdef int delta_enemy = enemy_final_ants - self.enemy_init_ants
+        
+        cdef int final_distance 
+        cdef int delta_dist   
 
         if delta_my == 0: #no friend ants died
             if delta_enemy < 0: #too good!
-                return 3.0
+                final_distance = self.inter_distance(simulator)
+                delta_dist = final_distance < self.init_distance
+                return 3.0 + delta_dist
             else: #I want them burning!
-                return 0.0
-        elif delta_my >= delta_enemy: #still good
-            return 1.0 #we killed more or equal
+                final_distance = self.inter_distance(simulator)
+                delta_dist = final_distance < self.init_distance
+                return 0.0 + delta_dist
+        elif delta_my > delta_enemy: #still good
+            final_distance = self.inter_distance(simulator)
+            delta_dist = final_distance < self.init_distance
+            return 1.0 + delta_dist #we killed more or equal
         else:
             return 0.0 #we killed less
 
@@ -126,7 +169,7 @@ cdef class _Ant:
     cdef copy(self):
         return 
 
-cpdef _Ant Ant(int i, int j, int owner):
+cdef _Ant Ant(int i, int j, int owner):
     cdef _Ant instance = _Ant.__new__(_Ant)
     instance.i = i
     instance.j = j
